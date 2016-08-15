@@ -1,0 +1,8 @@
+#
+# Useful aliases
+#
+export CHANGELOG="Update to KDE Applications 16.08.0
+   * KDE Applications 16.08.0
+   * https://www.kde.org/announcements/announce-applications-16.08.0.php
+"
+
