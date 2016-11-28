@@ -1,8 +1,8 @@
 #!/usr/bin/zsh
 
 #Set variables used by this script
-kde_obs_dir=~/openSUSE/OBS/KDE\:Unstable\:Applications
-kde_new_version=16.11.60
+kde_obs_dir=~/openSUSE/KDE\:Unstable\:Applications
+kde_new_version=17.03.60
 
 submit_package() {
   # Submit package to OBS
@@ -13,7 +13,7 @@ submit_package() {
   osc co $package
   cd $package
 
-  cat _service |sed s,"16.07.70","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./_service;
+  cat _service |sed s,"16.11.60","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./_service;
 
   # Commit the new snapshot
   osc addremove

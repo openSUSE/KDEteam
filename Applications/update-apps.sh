@@ -2,16 +2,18 @@
 
 #Set variables used by this script
 kde_sources=~/openSUSE/1608
-kde_obs_dir=~/openSUSE/OBS/KDE\:Applications
-kde_new_version=16.08.0
-kdelibs_new_version=4.14.23
+kde_obs_dir=~/openSUSE/KDE\:Applications
+kde_new_version=16.12.0
+kdelibs_new_version=4.14.24
+OLDPATCH=/tmp/patches.old
+NEWPATCH=/tmp/patches.new
+DIFFPATCH=/tmp/patches.diff
 
 submit_package() {
   # Submit package to OBS
   package=$1
   src_pack=$2
 
- 
   cd $kde_obs_dir/
   osc co $package
   cd $package
@@ -19,65 +21,100 @@ submit_package() {
   # Determine current version 
   kde_cur_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
 
-  # Validate if update is required
+  echo "Updating ${package} from $kde_cur_version to $kde_new_version"
 
-            echo "Updating ${package} from $kde_cur_version to $kde_new_version"
-            case "$package" in 
-                        kdelibs4)
-                                rm ${src_pack}-${kde_cur_version}.tar.xz
-                                cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
-                                mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
-                                ;;
-                        kde-l10n)
-                                rm ${src_pack}-*-${kde_cur_version}.tar.xz
-                                cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
-                                mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
-                                ;;
-                        *)
-                                rm ${src_pack}-${kde_cur_version}.tar.xz
-                                cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
-                                mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
-                                ;;
-            esac
+  # Determine existing patches
+  cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${OLDPATCH}
 
-            # Update the spec file
-            case "$package" in 
-	                kdebindings4)
-                                cat ${package}.spec.in |sed s,"$kde_cur_version","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./${package}.spec.in;
-	                        sh ./pre_checkin.sh;
-                                osc vc $package.changes -m$CHANGELOG
-		                ;;
-                        python-kde4)
-                                cat ${package}.spec |sed s,"$kde_cur_version","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./${package}.spec;
-              		        sh ./pre_checkin.sh;
-                                osc vc $package.changes -m$CHANGELOG
-                                ;;
-                        kdelibs4)
-                                cat ${package}.spec |sed s,"$kde_cur_version","$kdelibs_new_version",g > /tmp/out && mv -f /tmp/out ./${package}.spec;
-              		        sh ./pre_checkin.sh;
-                                osc vc $package.changes -m$CHANGELIBLOG ;
-                                osc vc -e
-                                ;;
-                        kde-l10n)
-                                cat ${package}.spec.in |sed s,"$kde_cur_version","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./${package}.spec.in;
-              		        sh ./pre_checkin.sh;
-                                osc vc $package.changes -m$CHANGELOG
-                                ;;
-                        *)
-                                cat ${package}.spec |sed s,"$kde_cur_version","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./${package}.spec;
-                                osc vc $package.changes -m$CHANGELOG
-		                ;;
-            esac
+  # Get the new spec-file for KDE:Unstable:Applications
+  osc co KDE:Unstable:Applications ${package} ${package}.spec
+  kde_sem_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
 
-            # Commit the new snapshot
-            osc addremove
-            osc ci --noservice -m "update to (${kde_new_version})"
-            cd $kde_obs_dir/
-            rm -rf $package
+  # Determine new patches
+  cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${NEWPATCH}
+
+  # Validate for dropped or new patches
+  diff ${OLDPATCH} ${NEWPATCH} > ${DIFFPATCH}
+  dropped=`cat ${DIFFPATCH} | grep '^<' | awk {'print $2'}`
+  added=`cat ${DIFFPATCH} | grep '^>' | awk {'print $2' }`
+
+  # Drop removed patches
+  for i in `echo $dropped`
+  do
+	  rm $i
+  done
+
+  # Retrieve new patches
+  for i in `echo $added`
+  do
+	  osc co KDE:Unstable:Applications ${package}.spec $i
+  done
+
+  # Remove old tarball and add new one
+  case "$package" in 
+              kdelibs4)
+                      rm ${src_pack}-${kde_cur_version}.tar.xz
+                      cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
+                      ;;
+              kde-l10n)
+                      rm ${src_pack}-*-${kde_cur_version}.tar.xz
+                      cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
+                      ;;
+              *)
+                      rm ${src_pack}-${kde_cur_version}.tar.xz
+                      cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
+                      ;;
+  esac
+  
+  # Create a proper changelog for the patches
+  NEWLINE=$'\n'
+  changes=${NEWLINE}
+  if [[ -n "$dropped" ]]  then
+	  changes="$changes+ Dropped patches:${NEWLINE}"
+	  for i in `echo $dropped`
+	  do
+		  changes="${changes}   - ${i}${NEWLINE}"
+	  done
+  fi
+  if [[ -n "$added" ]]; then
+	  changes="$changes+ Added patches:${NEWLINE}"
+	  for i in `echo $added`
+	  do
+		  changes="${changes}   - ${i}${NEWLINE}"
+	  done
+  fi
+
+  # Update the spec file
+  case "$package" in 
+              kdelibs4)
+		      sed -i "s/$kde_sem_version/$kdelibs_new_version/g" ${package}.spec
+                      sh ./pre_checkin.sh;
+                      osc vc $package.changes -m"${CHANGELIBLOG}${changes}" ;
+                      osc vc -e
+                      ;;
+              kde-l10n)
+		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
+                      sh ./pre_checkin.sh;
+                      osc vc $package.changes -m"${CHANGELOG}$changes";
+                      ;;
+              *)
+		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
+                      osc vc $package.changes -m"${CHANGELOG}$changes";
+	       ;;
+  esac
+
+  # Commit the new snapshot
+  osc addremove
+  osc ci --noservice -m "update to (${kde_new_version})"
+  cd $kde_obs_dir/
+  rm -rf $package
 }
 
 
-#Update now the packages based in GIT and submit to OBS
+# Main routine. Go through the full list of packages in the KDE Application release
 
 for i in `cat ~/openSUSE/kde-apps`
 do 
@@ -85,9 +122,6 @@ do
         case "$i" in 
 		        baloo5-widgets)
 				git_package=baloo-widgets
-				;;
-		        plasma-addons)
-				git_package=kdeplasma-addons
 				;;
 	                kdebase4)
 				git_package=kde-baseapps
@@ -97,36 +131,6 @@ do
 				;;
 	                kdebase4-runtime)
 				git_package=kde-runtime
-				;;
-	                kdebindings-smokegen)
-				git_package=smokegen
-				;;
-	                kdebindings-smokeqt)
-				git_package=smokeqt
-				;;
-	                kdebindings-smokekde)
-				git_package=smokekde
-				;;
-	                mono-qt4)
-				git_package=qyoto
-				;;
-	                mono-kde4)
-				git_package=kimono
-				;;
-	                python-kde4)
-				git_package=pykde4
-				;;
-	                ruby-qt4)
-				git_package=qtruby
-				;;
-	                ruby-kde4)
-				git_package=korundum
-				;;
-	                perl-qt4)
-				git_package=perlqt
-				;;
-	                perl-kde4)
-				git_package=perlkde
 				;;
 	                mobipocket)
 				git_package=kdegraphics-mobipocket
@@ -140,18 +144,6 @@ do
 	                kio_audiocd)
 				git_package=audiocd-kio
 				;;
-	                libnepomukwidgets)
-				git_package=nepomuk-widgets
-				;;
-	                oxygen-icon-theme)
-		       	    git_package=oxygen-icons
-			    ;;
-	                kdebase4-artwork)
-		       	    git_package=kde-base-artwork
-			    ;;
-	                kdebase4-wallpapers)
-		       	    git_package=kde-wallpapers
-			    ;;
 	                kde-print-manager)
 		       	    git_package=print-manager
 			    ;;
@@ -160,9 +152,6 @@ do
                             ;;
                         kdnssd)
                             git_package=zeroconf-ioslave
-                            ;;
-                        gpgmepp5)
-                            git_package=gpgmepp
                             ;;
                         gwenview5)
                             git_package=gwenview
