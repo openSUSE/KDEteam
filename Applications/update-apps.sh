@@ -1,4 +1,6 @@
 #!/usr/bin/zsh
+set -e
+setopt nounset
 
 #Set variables used by this script
 kde_sources=~/openSUSE/1608
@@ -71,19 +73,18 @@ submit_package() {
   
   # Create a proper changelog for the patches
   NEWLINE=$'\n'
-  changes=${NEWLINE}
   if [[ -n "$dropped" ]]  then
-	  changes="$changes+ Dropped patches:${NEWLINE}"
+	  changes="$changes${NEWLINE}- Dropped patches:"
 	  for i in `echo $dropped`
 	  do
-		  changes="${changes}   - ${i}${NEWLINE}"
+		  changes="${changes}${NEWLINE}   + ${i}"
 	  done
   fi
   if [[ -n "$added" ]]; then
-	  changes="$changes+ Added patches:${NEWLINE}"
+	  changes="$changes${NEWLINE}- Added patches:"
 	  for i in `echo $added`
 	  do
-		  changes="${changes}   - ${i}${NEWLINE}"
+		  changes="${changes}${NEWLINE}   + ${i}"
 	  done
   fi
 

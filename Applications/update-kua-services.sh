@@ -2,7 +2,15 @@
 
 #Set variables used by this script
 kde_obs_dir=~/openSUSE/KDE\:Unstable\:Applications
-kde_new_version=17.03.60
+
+usage() {
+
+  echo "Usage is as follows:"
+  echo
+  echo "$PROGRAM <old-version> <new-version>"
+  echo
+  echo
+}
 
 submit_package() {
   # Submit package to OBS
@@ -13,7 +21,7 @@ submit_package() {
   osc co $package
   cd $package
 
-  cat _service |sed s,"16.11.60","$kde_new_version",g > /tmp/out && mv -f /tmp/out ./_service;
+  sed -i s/$kde_old_version/$kde_new_version/ _services
 
   # Commit the new snapshot
   osc addremove
@@ -21,6 +29,14 @@ submit_package() {
   cd $kde_obs_dir/
   rm -rf $package
 }
+
+if [[ "$#" -ne 2 ]]; then
+	usage
+	exit
+fi
+
+kde_old_version=$1
+kde_new_version=$2
 
 for i in `osc ls KDE:Unstable:Applications`
 do 
