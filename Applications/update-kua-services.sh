@@ -25,7 +25,7 @@ submit_package() {
 
   # Commit the new snapshot
   osc addremove
-  osc ci --noservice -m " "
+  osc ci -m "Bump version to $kde_new_version"
   cd $kde_obs_dir/
   rm -rf $package
 }
