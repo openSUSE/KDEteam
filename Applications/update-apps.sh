@@ -18,8 +18,15 @@ submit_package() {
   src_pack=$2
 
   cd $kde_obs_dir/
-  osc co $package
-  cd $package
+  if osc api /source/KDE:Applications/$package >/dev/null 2>&1; then
+          osc co $package
+          cd $package
+  else
+	  osc copypac KDE:Unstable:Applications $package KDE:Applications
+	  osc co $package
+          cd $package
+	  rm _service
+  fi
 
   # Determine current version 
   kde_cur_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
@@ -36,23 +43,29 @@ submit_package() {
   # Determine new patches
   cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${NEWPATCH}
 
+  echo "Determining patches"
   # Validate for dropped or new patches
   `diff ${OLDPATCH} ${NEWPATCH} > ${DIFFPATCH} ||:`
+  echo "Dropped patches"
   dropped=`cat ${DIFFPATCH} | grep '^<' | awk {'print $2'}`
+  echo "Added patches"
   added=`cat ${DIFFPATCH} | grep '^>' | awk {'print $2'}`
 
+  echo "Dropping patches"
   # Drop removed patches
   for i in `echo $dropped`
   do
 	  rm $i
   done
 
+  echo "Adding new/updated patches"
   for i in `cat ${NEWPATCH}`
   do
 	  osc co KDE:Unstable:Applications ${package} $i
   done
 
 
+  echo "Removing old tarballs"
   # Remove old tarball and add new one
   OLDTAR="${src_pack}-*.tar.xz"
   echo ${src_pack}
@@ -62,6 +75,7 @@ submit_package() {
 	  rm $f
   done
 	  
+  echo "Prepare changelog"
   # Create a proper changelog for the patches
   NEWLINE=$'\n'
   changes=""
@@ -80,6 +94,7 @@ submit_package() {
 	  done
   fi
 
+  echo "Update Spec-file"
   # Update the spec file
   case "$package" in 
               kde-l10n)
@@ -97,6 +112,7 @@ submit_package() {
 	       ;;
   esac
 
+  echo "Final commit"
   # Commit the new snapshot
   osc addremove
   osc ci --noservice -m "update to (${kde_new_version})"
@@ -118,6 +134,7 @@ submit_kde4_package() {
 
   echo "Updating ${package} from $kde_sem_version to $kde_new_version"
 
+  echo "Changing tarball"
   # Remove old tarball and add new one
   OLDTAR="${src_pack}-*.tar.xz"
   echo ${src_pack}
@@ -127,6 +144,7 @@ submit_kde4_package() {
 	  rm $f
   done
 	  
+  echo "Update Spec-file"
   # Update the spec file
   case "$package" in 
               kdelibs4)
@@ -151,6 +169,7 @@ submit_kde4_package() {
 	       ;;
   esac
 
+  echo "Final commit"
   # Commit the new snapshot
   osc addremove
   osc ci --noservice -m "update to (${kde_new_version})"
@@ -161,6 +180,7 @@ submit_kde4_package() {
 
 # Main routine. Go through the full list of packages in the KDE Application release
 
+if 0; then
 for i in `cat ~/openSUSE/kde-apps`
 do 
 	echo "Updating package $i"
@@ -219,6 +239,7 @@ do
   esac
               submit_package $i $git_package
 done
+fi
 
 # Now tackle the KDE4 apps
 #
