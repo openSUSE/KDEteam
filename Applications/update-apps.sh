@@ -1,11 +1,12 @@
 #!/usr/bin/zsh
-set -e
+set -e 
 setopt nounset
+unsetopt nomatch
 
 #Set variables used by this script
-kde_sources=~/openSUSE/1608
-kde_obs_dir=~/openSUSE/KDE\:Applications
-kde_new_version=16.12.0
+kde_sources=~/openSUSE/KDE
+kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
+kde_new_version=16.11.80
 kdelibs_new_version=4.14.24
 OLDPATCH=/tmp/patches.old
 NEWPATCH=/tmp/patches.new
@@ -36,9 +37,9 @@ submit_package() {
   cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${NEWPATCH}
 
   # Validate for dropped or new patches
-  diff ${OLDPATCH} ${NEWPATCH} > ${DIFFPATCH}
+  `diff ${OLDPATCH} ${NEWPATCH} > ${DIFFPATCH} ||:`
   dropped=`cat ${DIFFPATCH} | grep '^<' | awk {'print $2'}`
-  added=`cat ${DIFFPATCH} | grep '^>' | awk {'print $2' }`
+  added=`cat ${DIFFPATCH} | grep '^>' | awk {'print $2'}`
 
   # Drop removed patches
   for i in `echo $dropped`
@@ -46,33 +47,24 @@ submit_package() {
 	  rm $i
   done
 
-  # Retrieve new patches
-  for i in `echo $added`
+  for i in `cat ${NEWPATCH}`
   do
-	  osc co KDE:Unstable:Applications ${package}.spec $i
+	  osc co KDE:Unstable:Applications ${package} $i
   done
 
+
   # Remove old tarball and add new one
-  case "$package" in 
-              kdelibs4)
-                      rm ${src_pack}-${kde_cur_version}.tar.xz
-                      cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
-                      mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
-                      ;;
-              kde-l10n)
-                      rm ${src_pack}-*-${kde_cur_version}.tar.xz
-                      cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
-                      mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
-                      ;;
-              *)
-                      rm ${src_pack}-${kde_cur_version}.tar.xz
-                      cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
-                      mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
-                      ;;
-  esac
-  
+  OLDTAR="${src_pack}-*.tar.xz"
+  echo ${src_pack}
+  echo ${OLDTAR}
+  for f in `find . -maxdepth 1 -name $OLDTAR -print`; do
+	  echo "Remove $f"
+	  rm $f
+  done
+	  
   # Create a proper changelog for the patches
   NEWLINE=$'\n'
+  changes=""
   if [[ -n "$dropped" ]]  then
 	  changes="$changes${NEWLINE}- Dropped patches:"
 	  for i in `echo $dropped`
@@ -90,20 +82,72 @@ submit_package() {
 
   # Update the spec file
   case "$package" in 
-              kdelibs4)
-		      sed -i "s/$kde_sem_version/$kdelibs_new_version/g" ${package}.spec
-                      sh ./pre_checkin.sh;
-                      osc vc $package.changes -m"${CHANGELIBLOG}${changes}" ;
-                      osc vc -e
-                      ;;
               kde-l10n)
+                      cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
                       sh ./pre_checkin.sh;
                       osc vc $package.changes -m"${CHANGELOG}$changes";
                       ;;
               *)
+                      cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
                       osc vc $package.changes -m"${CHANGELOG}$changes";
+	       ;;
+  esac
+
+  # Commit the new snapshot
+  osc addremove
+  osc ci --noservice -m "update to (${kde_new_version})"
+  cd $kde_obs_dir/
+  rm -rf $package
+}
+
+submit_kde4_package() {
+  # Submit package to OBS
+  package=$1
+  src_pack=$2
+
+  cd $kde_obs_dir/
+  osc co $package
+  cd $package
+
+  # Determine current version 
+  kde_sem_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
+
+  echo "Updating ${package} from $kde_sem_version to $kde_new_version"
+
+  # Remove old tarball and add new one
+  OLDTAR="${src_pack}-*.tar.xz"
+  echo ${src_pack}
+  echo ${OLDTAR}
+  for f in `find . -maxdepth 1 -name $OLDTAR -print`; do
+	  echo "Remove $f"
+	  rm $f
+  done
+	  
+  # Update the spec file
+  case "$package" in 
+              kdelibs4)
+                      cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
+		      sed -i "s/$kde_sem_version/$kdelibs_new_version/g" ${package}.spec
+                      osc vc $package.changes -m"${CHANGELIBLOG}" ;
+                      sh ./pre_checkin.sh;
+                      ;;
+              kde-l10n)
+                      cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
+		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
+                      osc vc $package.changes -m"${CHANGELOG}";
+                      sh ./pre_checkin.sh;
+                      ;;
+              *)
+                      cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
+                      mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
+		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
+                      osc vc $package.changes -m"${CHANGELOG}";
 	       ;;
   esac
 
@@ -123,12 +167,6 @@ do
         case "$i" in 
 		        baloo5-widgets)
 				git_package=baloo-widgets
-				;;
-	                kdebase4)
-				git_package=kde-baseapps
-				;;
-	                kdebase4-workspace)
-				git_package=kde-workspace
 				;;
 	                kdebase4-runtime)
 				git_package=kde-runtime
@@ -181,3 +219,20 @@ do
   esac
               submit_package $i $git_package
 done
+
+# Now tackle the KDE4 apps
+#
+for i in `cat ~/openSUSE/kde4-apps`
+do 
+	echo "Updating package $i"
+        case "$i" in 
+                        kdesdk4-scripts)
+                            git_package=kde-dev-scripts
+                            ;;
+		        *)
+                            git_package=`echo $i | sed s,"4","",g`
+	  	 	    ;;
+	esac
+        submit_kde4_package $i $git_package
+done
+
