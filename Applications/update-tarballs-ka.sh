@@ -8,119 +8,8 @@ kde_sources=~/openSUSE/KDE
 kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
 kde_new_version=16.11.80
 kdelibs_new_version=4.14.24
-OLDPATCH=/tmp/patches.old
-NEWPATCH=/tmp/patches.new
-DIFFPATCH=/tmp/patches.diff
 
 submit_package() {
-  # Submit package to OBS
-  package=$1
-  src_pack=$2
-
-  cd $kde_obs_dir/
-  if osc api /source/KDE:Applications/$package >/dev/null 2>&1; then
-          osc co $package
-          cd $package
-  else
-	  osc copypac KDE:Unstable:Applications $package KDE:Applications
-	  osc co $package
-          cd $package
-	  rm _service
-  fi
-
-  # Determine current version 
-  kde_cur_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
-
-  echo "Updating ${package} from $kde_cur_version to $kde_new_version"
-
-  # Determine existing patches
-  cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${OLDPATCH}
-
-  # Get the new spec-file for KDE:Unstable:Applications
-  osc co KDE:Unstable:Applications ${package} ${package}.spec
-  kde_sem_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
-
-  # Determine new patches
-  cat ${package}.spec | grep '^Patch' | awk {'print $2'} > ${NEWPATCH}
-
-  echo "Determining patches"
-  # Validate for dropped or new patches
-  `diff ${OLDPATCH} ${NEWPATCH} > ${DIFFPATCH} ||:`
-  echo "Dropped patches"
-  dropped=`cat ${DIFFPATCH} | grep '^<' | awk {'print $2'}`
-  echo "Added patches"
-  added=`cat ${DIFFPATCH} | grep '^>' | awk {'print $2'}`
-
-  echo "Dropping patches"
-  # Drop removed patches
-  for i in `echo $dropped`
-  do
-	  rm $i
-  done
-
-  echo "Adding new/updated patches"
-  for i in `cat ${NEWPATCH}`
-  do
-	  osc co KDE:Unstable:Applications ${package} $i
-  done
-
-
-  echo "Removing old tarballs"
-  # Remove old tarball and add new one
-  OLDTAR="${src_pack}-*.tar.xz"
-  echo ${src_pack}
-  echo ${OLDTAR}
-  for f in `find . -maxdepth 1 -name $OLDTAR -print`; do
-	  echo "Remove $f"
-	  rm $f
-  done
-	  
-  echo "Prepare changelog"
-  # Create a proper changelog for the patches
-  NEWLINE=$'\n'
-  changes=""
-  if [[ -n "$dropped" ]]  then
-	  changes="$changes${NEWLINE}- Dropped patches:"
-	  for i in `echo $dropped`
-	  do
-		  changes="${changes}${NEWLINE}   + ${i}"
-	  done
-  fi
-  if [[ -n "$added" ]]; then
-	  changes="$changes${NEWLINE}- Added patches:"
-	  for i in `echo $added`
-	  do
-		  changes="${changes}${NEWLINE}   + ${i}"
-	  done
-  fi
-
-  echo "Update Spec-file"
-  # Update the spec file
-  case "$package" in 
-              kde-l10n)
-                      cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
-                      mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
-		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
-                      sh ./pre_checkin.sh;
-                      osc vc $package.changes -m"${CHANGELOG}$changes";
-                      ;;
-              *)
-                      cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
-                      mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
-		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
-                      osc vc $package.changes -m"${CHANGELOG}$changes";
-	       ;;
-  esac
-
-  echo "Final commit"
-  # Commit the new snapshot
-  osc addremove
-  osc ci --noservice -m "update to (${kde_new_version})"
-  cd $kde_obs_dir/
-  rm -rf $package
-}
-
-submit_kde4_package() {
   # Submit package to OBS
   package=$1
   src_pack=$2
@@ -241,6 +130,7 @@ done
 
 # Now tackle the KDE4 apps
 #
+#
 for i in `cat ~/openSUSE/kde4-apps`
 do 
 	echo "Updating package $i"
@@ -252,6 +142,6 @@ do
                             git_package=`echo $i | sed s,"4","",g`
 	  	 	    ;;
 	esac
-        submit_kde4_package $i $git_package
+        submit_package $i $git_package
 done
 
