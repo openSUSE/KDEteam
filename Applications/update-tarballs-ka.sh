@@ -6,20 +6,36 @@ unsetopt nomatch
 #Set variables used by this script
 kde_sources=~/openSUSE/KDE
 kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
-kde_new_version=16.11.80
-kdelibs_new_version=4.14.24
+kde_new_version=16.12.1
+kdelibs_new_version=4.14.28
 
 submit_package() {
   # Submit package to OBS
   package=$1
   src_pack=$2
 
+  # Skip previously done tarballs
+
+  if [ $package == "kdelibs4" ];
+  then
+      packagefile="${src_pack}-$kdelibs_new_version.tar.xz"
+  else
+      packagefile="${src_pack}-$kde_new_version.tar.xz"
+  fi
+
+  if [ ! -f $packagefile ] && [ -f $kde_sources/done/$packagefile ];
+  then
+    echo "Skipping $src_pack, already done"
+    return
+  fi
+
+
   cd $kde_obs_dir/
   osc co $package
   cd $package
 
-  # Determine current version 
-  kde_sem_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
+  # Determine current version
+  kde_sem_version=`grep 'Version:' ${package}.spec | awk {'print $2'}`
 
   echo "Updating ${package} from $kde_sem_version to $kde_new_version"
 
