@@ -27,7 +27,7 @@ echo "  * New $type release"
 echo "  * For more details please see:"
 echo "  * https://www.kde.org/announcements/plasma-$4.php"
 echo "- Changes since $version_from:"
-changes=$(git log --pretty=oneline $commit_from...$commit_to | cut -d' ' -f2- | sed "s/^/  * /" | grep -v "Merge branch '" | grep -v "_SILENT")
+changes=$(git log --pretty=oneline --no-merges $commit_from...$commit_to | cut -d' ' -f2- | grep -v "_SILENT" | sed "s/^/  * /")
 if [ -z "$changes" ]; then
     changes="  * None"
 fi
