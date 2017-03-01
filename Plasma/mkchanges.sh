@@ -8,7 +8,7 @@ if [[ $# -eq 1 ]]; then
     exit 0
 fi
 
-if [[ $# -ne 4 ]]; then
+if [[ $# -ne 5 ]]; then
     echo "Usage is different"
     exit 1
 fi
@@ -17,12 +17,13 @@ commit_from=$1
 commit_to=$2
 version_from=$3
 version_to=$4
+type=$5
 
 echo "-------------------------------------------------------------------"
 LANG=C date | tr -d '\n'
 echo -e " - fabian@ritter-vogt.de\n"
 echo "- Update to $version_to"
-echo "  * New feature release"
+echo "  * New $type release"
 echo "  * For more details please see:"
 echo "  * https://www.kde.org/announcements/plasma-$4.php"
 echo "- Changes since $version_from:"

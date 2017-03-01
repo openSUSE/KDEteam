@@ -3,11 +3,13 @@
 # Attention: Reads and overwrites /tmp/change{,s}
 
 # Version number
-version_from="5.9.0"
-version_to="5.9.1"
+version_from="5.9.2"
+version_to="5.9.3"
 # Git refs
-commit_from="v5.9.0"
-commit_to="v5.9.1"
+commit_from="v5.9.2"
+commit_to="v5.9.3"
+# Type of update, either "bugfix" or "feature"
+type="bugfix"
 # Location of plasma repo checkouts (need to be fresh)
 repo_location="/home/fabian/plasma"
 # Location of downloaded tars. Will be used if available
@@ -53,7 +55,7 @@ for i in *; do
         fi
     fi
 
-    (cd "${repo_location}/${reponame}"; "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to") > /tmp/change
+    (cd "${repo_location}/${reponame}"; "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type") > /tmp/change
     for c in *.changes; do
         cat /tmp/change $c > /tmp/changes
         mv /tmp/changes $c
