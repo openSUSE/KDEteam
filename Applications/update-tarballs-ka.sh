@@ -1,5 +1,5 @@
 #!/usr/bin/zsh
-set -e 
+set -e
 setopt nounset
 unsetopt nomatch
 
@@ -8,6 +8,8 @@ kde_sources=~/openSUSE/KDE
 kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
 kde_new_version=16.12.1
 kdelibs_new_version=4.14.28
+kf5_apps_list=~/openSUSE/kde-apps
+kdelibs_apps_list=~/openSUSE/kde4-apps
 
 submit_package() {
   # Submit package to OBS
@@ -48,10 +50,10 @@ submit_package() {
 	  echo "Remove $f"
 	  rm $f
   done
-	  
+
   echo "Update Spec-file"
   # Update the spec file
-  case "$package" in 
+  case "$package" in
               kdelibs4)
                       cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
@@ -85,10 +87,10 @@ submit_package() {
 
 # Main routine. Go through the full list of packages in the KDE Application release
 
-for i in `cat ~/openSUSE/kde-apps`
-do 
+for i in `cat $kf5_apps_list`
+do
 	echo "Updating package $i"
-        case "$i" in 
+        case "$i" in
 		        baloo5-widgets)
 				git_package=baloo-widgets
 				;;
@@ -137,7 +139,7 @@ do
 	                akonadi-contact)
 				git_package=akonadi-contacts
 				;;
-                        *) 
+                        *)
                             git_package=`echo $i | sed s,"4","",g`
                             ;;
   esac
@@ -147,10 +149,10 @@ done
 # Now tackle the KDE4 apps
 #
 #
-for i in `cat ~/openSUSE/kde4-apps`
-do 
+for i in `cat $kdelibs_apps_list`
+do
 	echo "Updating package $i"
-        case "$i" in 
+        case "$i" in
                         kdesdk4-scripts)
                             git_package=kde-dev-scripts
                             ;;
