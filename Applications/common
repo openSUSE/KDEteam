@@ -12,7 +12,7 @@ frameworks_version_to="5.32.0"
 
 base_url="https://www.kde.org/announcements"
 plasma_url="$base_url/plasma-$plasma_version_to.php"
-kf5_url="$base_url/kde-frameworks-$frameorks_version_to.php"
+kf5_url="$base_url/kde-frameworks-$frameworks_version_to.php"
 applications_url="$base_url/announce-applications-$kde_new_version.php"
 
 kf5_apps_list=/home/lb/Coding/OSC/KDEteam/Applications/kde-apps
