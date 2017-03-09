@@ -1,17 +1,22 @@
-#!/bin/bash
+committer=""
 
-committer="fabian@ritter-vogt.de"
+kde_sources=~/Coding/OSC/new_sources/
+kde_obs_dir=~/Coding/OSC/KDE\:Applications/
+
+kde_new_version=16.12.3
+kdelibs_new_version=4.14.30
+plasma_version_from="5.9.2"
+plasma_version_to="5.9.3"
+frameworks_version_from=5.31.0"
+frameworks_version_to="5.32.0"
+
 base_url="https://www.kde.org/announcements"
-plasma_url="$base_url/plasma-$4.php"
-kf5_url="$base_url/kde-frameworks-$4.php"
-applications_url="$base_url/announce-applications-$4.php"
+plasma_url="$base_url/plasma-$plasma-version-to.php"
+kf5_url="$base_url/kde-frameworks-$frameorks_version_to.php"
+applications_url="$base_url/announce-applications-$kde_new_version.php"
 
-kde_sources=~/openSUSE/KDE
-kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
-kde_new_version=16.12.1
-kdelibs_new_version=4.14.28
-kf5_apps_list=~/openSUSE/kde-apps
-kdelibs_apps_list=~/openSUSE/kde4-apps
+kf5_apps_list=/home/lb/Coding/OSC/KDEteam/Applications/kde-apps
+kdelibs_apps_list=/home/lb/Coding/OSC/KDEteam/Applications/kde4-apps
 
 # Repository location (optional)
-repo_location=~/Coding/OSC/
+repo_location=~/Coding/OSC/new_sources/checkouts/
