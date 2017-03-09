@@ -11,7 +11,7 @@ frameworks_version_from="5.31.0"
 frameworks_version_to="5.32.0"
 
 base_url="https://www.kde.org/announcements"
-plasma_url="$base_url/plasma-$plasma-version-to.php"
+plasma_url="$base_url/plasma-$plasma_version_to.php"
 kf5_url="$base_url/kde-frameworks-$frameorks_version_to.php"
 applications_url="$base_url/announce-applications-$kde_new_version.php"
 
