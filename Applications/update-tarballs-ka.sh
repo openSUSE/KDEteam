@@ -27,7 +27,9 @@ update_changes() {
             mv /tmp/changes $c
         done
     else
+        pushd "${repo_location}/${reponame}"
         "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type" "applications" > /tmp/change
+        popd
         for c in *.changes; do
             cat /tmp/change $c > /tmp/changes
             mv /tmp/changes $c
