@@ -53,13 +53,13 @@ full_url=""
 
 case $kind in
     "applications")
-        full_url="$base_url/$applications_url"
+        full_url="$applications_url"
         ;;
     "frameworks")
-        full_url="$base_url/$kf5_url"
+        full_url="$kf5_url"
         ;;
     "plasma")
-        full_url="$base_url/$plasma_url"
+        full_url="$plasma_url"
         ;;
 esac
 
@@ -70,6 +70,7 @@ echo "- Update to $version_to"
 echo "  * New $type release"
 echo "  * For more details please see:"
 echo "  * $full_url"
+
 commits=$(git log --pretty=format:%H --no-merges $commit_from...$commit_to)
 if [ "$(echo -- "$commits" | wc -l)" -gt 30 ]; then
     changes="- Too many changes to list here"
