@@ -31,6 +31,7 @@ update_changes() {
         for c in *.changes; do
             cat /tmp/change $c > /tmp/changes
             mv /tmp/changes $c
+        done
     fi
 
 }
