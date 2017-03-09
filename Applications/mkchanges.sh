@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. $(realpath "$(dirname "$0")")/common
+source $(realpath "$(dirname "$0")")/common
 
 if [[ $# -eq 1 ]]; then
     echo "-------------------------------------------------------------------"
@@ -11,7 +11,7 @@ if [[ $# -eq 1 ]]; then
     exit 0
 fi
 
-if [[ $# -ne 5 ]]; then
+if [[ $# -ne 6 ]]; then
     echo "Usage is different"
     exit 1
 fi
@@ -49,17 +49,17 @@ function entryForCommit {
     echo "\n"
 }
 
-$full_url = $base_url
+full_url=""
 
 case $kind in
     "applications")
-        full_url = "$base_url/$applications_url"
+        full_url="$base_url/$applications_url"
         ;;
     "frameworks")
-        full_url = "$base_url/$kf5_url"
+        full_url="$base_url/$kf5_url"
         ;;
     "plasma")
-        full_url = "$base_url/$plasma_url"
+        full_url="$base_url/$plasma_url"
         ;;
 esac
 
