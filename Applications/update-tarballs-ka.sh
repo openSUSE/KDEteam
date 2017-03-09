@@ -28,8 +28,19 @@ update_changes() {
         done
     else
         pushd "${repo_location}/${reponame}"
+
+        if [ ! $(git tag -l | grep $commit_to) ]; then
+            # kdelibs needs to be special cased
+            if [ $reponame == "kdelibs" ]; then
+                commit_to="origin/KDE/4.14"
+            else
+                commit_to="origin/$applications_stable_branch"
+            fi
+        fi
+
         "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type" "applications" > /tmp/change
         popd
+
         for c in *.changes; do
             cat /tmp/change $c > /tmp/changes
             mv /tmp/changes $c
@@ -84,7 +95,7 @@ submit_package() {
 
   echo "Update Spec-file"
   # Update the spec file
-  upstream_reponame=$(echo ${packagefile} | sed -E -e 's/-($kde_new_version|$kdelibs_new_version)\.tar\.xz//g' -e 's/l10n-.*/l10n/g')
+  upstream_reponame=$(echo ${packagefile} | sed -E -e 's/-('"$kde_new_version"'|'"$kdelibs_new_version"').tar.xz//g' -e 's/l10n-.*/l10n/g')
   case "$package" in
               kdelibs4)
                       cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
@@ -97,23 +108,24 @@ submit_package() {
                       cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
-                      update_changes $kde_sem_version $kdelibs_new_version kde-l10n
+                      update_changes $kde_sem_version $kde_new_version kde-l10n
                       sh ./pre_checkin.sh;
                       ;;
               *)
                       cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
-		      update_changes $kde_sem_version $kdelibs_new_version $upstream_reponame
+		      update_changes $kde_sem_version $kde_new_version $upstream_reponame
 	       ;;
   esac
 
+
   echo "Final commit"
   # Commit the new snapshot
-  osc addremove
-  osc ci --noservice -m "update to (${kde_new_version})"
+  # osc addremove
+  # osc ci --noservice -m "update to (${kde_new_version})"
   cd $kde_obs_dir/
-  rm -rf $package
+  # rm -rf $package
 }
 
 
