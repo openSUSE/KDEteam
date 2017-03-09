@@ -1,13 +1,12 @@
 #!/usr/bin/zsh
-set -e 
+set -e
 setopt nounset
 unsetopt nomatch
 
 #Set variables used by this script
-kde_sources=~/openSUSE/KDE
-kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
-kde_new_version=16.11.80
-kdelibs_new_version=4.14.24
+
+. $(realpath "$(dirname "$0")")/common
+
 OLDPATCH=/tmp/patches.old
 NEWPATCH=/tmp/patches.new
 DIFFPATCH=/tmp/patches.diff
@@ -28,7 +27,7 @@ submit_package() {
 	  rm _service
   fi
 
-  # Determine current version 
+  # Determine current version
   kde_cur_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
 
   echo "Updating ${package} from $kde_cur_version to $kde_new_version"
@@ -74,7 +73,7 @@ submit_package() {
 	  echo "Remove $f"
 	  rm $f
   done
-	  
+
   echo "Prepare changelog"
   # Create a proper changelog for the patches
   NEWLINE=$'\n'
@@ -96,7 +95,7 @@ submit_package() {
 
   echo "Update Spec-file"
   # Update the spec file
-  case "$package" in 
+  case "$package" in
               kde-l10n)
                       cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
@@ -129,7 +128,7 @@ submit_kde4_package() {
   osc co $package
   cd $package
 
-  # Determine current version 
+  # Determine current version
   kde_sem_version=`cat ${package}.spec | grep 'Version:' | awk {'print $2'}`
 
   echo "Updating ${package} from $kde_sem_version to $kde_new_version"
@@ -143,10 +142,10 @@ submit_kde4_package() {
 	  echo "Remove $f"
 	  rm $f
   done
-	  
+
   echo "Update Spec-file"
   # Update the spec file
-  case "$package" in 
+  case "$package" in
               kdelibs4)
                       cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
@@ -181,9 +180,9 @@ submit_kde4_package() {
 # Main routine. Go through the full list of packages in the KDE Application release
 
 for i in `cat ~/openSUSE/kde-apps`
-do 
+do
 	echo "Updating package $i"
-        case "$i" in 
+        case "$i" in
 		        baloo5-widgets)
 				git_package=baloo-widgets
 				;;
@@ -232,7 +231,7 @@ do
 	                akonadi-contact)
 				git_package=akonadi-contacts
 				;;
-                        *) 
+                        *)
                             git_package=`echo $i | sed s,"4","",g`
                             ;;
   esac
@@ -242,9 +241,9 @@ done
 # Now tackle the KDE4 apps
 #
 for i in `cat ~/openSUSE/kde4-apps`
-do 
+do
 	echo "Updating package $i"
-        case "$i" in 
+        case "$i" in
                         kdesdk4-scripts)
                             git_package=kde-dev-scripts
                             ;;

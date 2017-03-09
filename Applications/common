@@ -1,0 +1,17 @@
+#!/bin/bash
+
+committer="fabian@ritter-vogt.de"
+base_url="https://www.kde.org/announcements"
+plasma_url="$base_url/plasma-$4.php"
+kf5_url="$base_url/kde-frameworks-$4.php"
+applications_url="$base_url/announce-applications-$4.php"
+
+kde_sources=~/openSUSE/KDE
+kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
+kde_new_version=16.12.1
+kdelibs_new_version=4.14.28
+kf5_apps_list=~/openSUSE/kde-apps
+kdelibs_apps_list=~/openSUSE/kde4-apps
+
+# Repository location (optional)
+repo_location=~/Coding/OSC/

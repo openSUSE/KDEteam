@@ -4,15 +4,8 @@ setopt nounset
 unsetopt nomatch
 
 #Set variables used by this script
-kde_sources=~/openSUSE/KDE
-kde_obs_dir=~/openSUSE/home\:luca_b\:test_KA
-kde_new_version=16.12.1
-kdelibs_new_version=4.14.28
-kf5_apps_list=~/openSUSE/kde-apps
-kdelibs_apps_list=~/openSUSE/kde4-apps
 
-# Repository location (optional)
-repo_location=~/KDEsrc/
+. $(realpath "$(dirname "$0")")/common
 
 script_dir=$(realpath "$(dirname "$0")")
 

@@ -1,10 +1,6 @@
 #!/bin/bash
 
-committer="fabian@ritter-vogt.de"
-base_url="https://www.kde.org/announcements"
-plasma_url="$base_url/plasma-$4.php"
-kf5_url="$base_url/kde-frameworks-$4.php"
-applications_url="$base_url/announce-applications-$4.php"
+. $(realpath "$(dirname "$0")")/common
 
 if [[ $# -eq 1 ]]; then
     echo "-------------------------------------------------------------------"
