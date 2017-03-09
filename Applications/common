@@ -3,11 +3,11 @@ committer=""
 kde_sources=~/Coding/OSC/new_sources/
 kde_obs_dir=~/Coding/OSC/KDE\:Applications/
 
-kde_new_version=16.12.3
-kdelibs_new_version=4.14.30
+kde_new_version="16.12.3"
+kdelibs_new_version="4.14.30"
 plasma_version_from="5.9.2"
 plasma_version_to="5.9.3"
-frameworks_version_from=5.31.0"
+frameworks_version_from="5.31.0"
 frameworks_version_to="5.32.0"
 
 base_url="https://www.kde.org/announcements"
