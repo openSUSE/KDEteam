@@ -1,7 +1,7 @@
 committer=""
 
-kde_sources=~/Coding/OSC/new_sources/
-kde_obs_dir=~/Coding/OSC/KDE\:Applications/
+kde_sources=~/Coding/osc/sources/
+kde_obs_dir=~/Coding/osc/KDE\:Applications/
 
 kde_new_version="16.12.3"
 kdelibs_new_version="4.14.30"
@@ -9,14 +9,16 @@ plasma_version_from="5.9.2"
 plasma_version_to="5.9.3"
 frameworks_version_from="5.31.0"
 frameworks_version_to="5.32.0"
+# Needed for tars with not pushed tags yet
+applications_stable_branch="Applications/16.12"
 
 base_url="https://www.kde.org/announcements"
 plasma_url="$base_url/plasma-$plasma_version_to.php"
 kf5_url="$base_url/kde-frameworks-$frameworks_version_to.php"
 applications_url="$base_url/announce-applications-$kde_new_version.php"
 
-kf5_apps_list=/home/lb/Coding/OSC/KDEteam/Applications/kde-apps
-kdelibs_apps_list=/home/lb/Coding/OSC/KDEteam/Applications/kde4-apps
+kf5_apps_list=~/Coding/osc/KDEteam/Applications/kde-apps
+kdelibs_apps_list=~/Coding/osc/KDEteam/Applications/kde4-apps
 
 # Repository location (optional)
-repo_location=~/Coding/OSC/new_sources/checkouts/
+repo_location=~/Coding/KDEsrc
