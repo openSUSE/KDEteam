@@ -11,6 +11,37 @@ kdelibs_new_version=4.14.28
 kf5_apps_list=~/openSUSE/kde-apps
 kdelibs_apps_list=~/openSUSE/kde4-apps
 
+# Repository location (optional)
+repo_location=~/KDEsrc/
+
+script_dir=$(realpath "$(dirname "$0")")
+
+update_changes() {
+
+    version_from=$1
+    version_to=$2
+    reponame=$3
+
+    commit_from="v$version_from"
+    commit_to="v$version_to"
+    type="bugfix"
+
+    if [ ! -d "$repo_location/$reponame" ]; then
+        echo -e "\tNo checkout for $i"
+        "${script_dir}/mkchanges.sh" "$version_to" > /tmp/change
+        for c in *.changes; do
+            cat /tmp/change $c > /tmp/changes
+            mv /tmp/changes $c
+        done
+    else
+        "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type") > /tmp/change
+        for c in *.changes; do
+            cat /tmp/change $c > /tmp/changes
+            mv /tmp/changes $c
+    fi
+
+}
+
 submit_package() {
   # Submit package to OBS
   package=$1
@@ -31,10 +62,14 @@ submit_package() {
     return
   fi
 
-
   cd $kde_obs_dir/
-  osc co $package
-  cd $package
+  if [ -d $package ]; then
+    cd $package
+    osc up
+  else
+    osc co $package
+    cd $package
+  fi
 
   # Determine current version
   kde_sem_version=`grep 'Version:' ${package}.spec | awk {'print $2'}`
@@ -53,26 +88,27 @@ submit_package() {
 
   echo "Update Spec-file"
   # Update the spec file
+  upstream_reponame=`echo ${packagefile} | cut --delimiter=- -f1`
   case "$package" in
               kdelibs4)
                       cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kdelibs_new_version/g" ${package}.spec
-                      osc vc $package.changes -m"${CHANGELIBLOG}" ;
+                      update_changes $kde_sem_version $kdelibs_new_version kdelibs
                       sh ./pre_checkin.sh;
                       ;;
               kde-l10n)
                       cp ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-*-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec.in
-                      osc vc $package.changes -m"${CHANGELOG}";
+                      update_changes $kde_sem_version $kdelibs_new_version kde-l10n
                       sh ./pre_checkin.sh;
                       ;;
               *)
                       cp ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz .
                       mv ${kde_sources}/${src_pack}-${kde_new_version}.tar.xz ${kde_sources}/done/
 		      sed -i "s/$kde_sem_version/$kde_new_version/g" ${package}.spec
-                      osc vc $package.changes -m"${CHANGELOG}";
+		      update_changes $kde_sem_version $kdelibs_new_version $upstream_reponame
 	       ;;
   esac
 
