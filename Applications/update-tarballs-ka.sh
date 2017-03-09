@@ -34,7 +34,7 @@ update_changes() {
             mv /tmp/changes $c
         done
     else
-        "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type") > /tmp/change
+        "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type" "applications") > /tmp/change
         for c in *.changes; do
             cat /tmp/change $c > /tmp/changes
             mv /tmp/changes $c
@@ -88,7 +88,7 @@ submit_package() {
 
   echo "Update Spec-file"
   # Update the spec file
-  upstream_reponame=`echo ${packagefile} | cut --delimiter=- -f1`
+  upstream_reponame=$(echo ${packagefile} | sed -E -e 's/-($kde_new_version|$kdelibs_new_version)\.tar\.xz//g' -e 's/l10n-.*/l10n/g')
   case "$package" in
               kdelibs4)
                       cp ${kde_sources}/${src_pack}-${kdelibs_new_version}.tar.xz .
