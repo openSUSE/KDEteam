@@ -12,6 +12,7 @@ import tempfile
 import time
 import subprocess
 
+from arghandler import ArgumentHandler, subcmd
 from pyrpm.spec import Spec
 
 
@@ -276,9 +277,9 @@ def checkout_package(obs_package_dir):
             subprocess.check_call(["osc", "co", obs_package_dir.name])
 
 
-def main():
+@subcmd
+def update_packages(parser, context, args):
 
-    parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
@@ -299,7 +300,7 @@ def main():
     parser.add_argument("packagelist", nargs="+",
                         help="Files with package lists")
 
-    options = parser.parse_args()
+    options = parser.parse_args(args)
 
     config = read_config(options.config)
     results = Counter()
@@ -321,6 +322,17 @@ def main():
 
     print("Processed {} packages: updated {}, failed/skipped {}".format(
         results["updated"], results["failedskipped"]))
+
+
+@subcmd
+def update_source_services(parser, context, args):
+    pass
+
+def main():
+
+    handler = ArgumentHandler()
+    handler.run()
+
 
 if __name__ == "__main__":
     main()
