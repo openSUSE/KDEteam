@@ -229,15 +229,6 @@ def upstream_tag_available(tag):
     return code == 0
 
 
-def append_to_changes(source_file, changes_file):
-
-    with fileinput.input(changes_file, inplace=True) as f:
-        for line in f:
-            if f.isfirstline():
-                print(Path(source_file).read_text().strip())
-            print(line.strip())
-
-
 def record_changes(package_name, checkout_dir, version_from, version_to,
                    upstream_reponame, changetype="bugfix",
                    kind="applications", changes_file=None,
