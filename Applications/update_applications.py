@@ -2,6 +2,7 @@
 
 import argparse
 from contextlib import contextmanager
+from collections import Counter
 import fileinput
 import os
 from pathlib import Path
@@ -18,7 +19,7 @@ SPECIAL_CASES = ("kdelibs4", "kde-l10n")
 VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{,}:).*")
 PROJECT_NAMES = {"plasma": "KDE:Frameworks5",
-                 "kf5": "KDE:Frameworks5",
+                 "frameworks": "KDE:Frameworks5",
                  "applications": "KDE:Applications"}
 BASE_URL = "https://www.kde.org/announcements/"
 URL_MAPPING = {"plasma": "plasma-{version_to}.php",
@@ -115,8 +116,9 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
 
     contents = "\n".join(contents)
     date = time.strftime("%a %d %b %H.%M.%S %Z %Y")
-    changes_entry = CHANGES_TEMPLATE.format(date=date, contents=contents,
-                                            committer=committer)
+    changes_entry = CHANGES_TEMPLATE.lstrip()
+    changes_entry = changes_entry.format(date=date, contents=contents,
+                                         committer=committer)
 
     with fileinput.input(destination, inplace=True) as f:
         for line in f:
@@ -300,15 +302,25 @@ def main():
     options = parser.parse_args()
 
     config = read_config(options.config)
+    results = Counter()
 
     for filename in options.packagelist:
         with open(filename) as handle:
             for line in handle:
                 name = line.strip()
-                update_package(name, options.version_to, options.tarball_dir,
-                               options.project_dir, options.committer,
-                               options.kind, options.type,
-                               options.checkout_dir)
+                result = update_package(name, options.version_to,
+                                        options.tarball_dir,
+                                        options.project_dir,
+                                        options.committer,
+                                        options.kind, options.type,
+                                        options.checkout_dir)
+                if result:
+                    results.update(["updated"])
+                else:
+                    results.update(["failedskipped"])
+
+    print("Processed {} packages: updated {}, failed/skipped {}".format(
+        results["updated"], results["failedskipped"]))
 
 if __name__ == "__main__":
     main()
