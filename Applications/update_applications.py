@@ -272,7 +272,6 @@ def update_packages(parser, context, args):
 
     options = parser.parse_args(args)
 
-    config = read_config(options.config)
     results = Counter()
 
     for filename in options.packagelist:
@@ -297,6 +296,7 @@ def update_packages(parser, context, args):
 @subcmd
 def update_source_services(parser, context, args):
     pass
+
 
 def main():
 
