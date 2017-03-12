@@ -128,25 +128,6 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
             print(line.strip())
 
 
-def read_config(configfile):
-
-    config = dict()
-
-    with open(configfile) as handle:
-        for line in handle:
-            line = line.strip()
-
-            if not line or line.startswith("#"):
-                continue
-
-            line = line.split("=")
-            key, value = line
-            value = re.sub('\'|"', "", value)  # Unquote
-            config[key] = value
-
-    return config
-
-
 def get_current_version(specfile: Path):
     specfile = Spec.from_file(str(specfile))
     version = specfile.version
@@ -274,8 +255,6 @@ def update_packages(parser, context, args):
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
-    parser.add_argument("-c", "--config", help="Configuration file",
-                        default="common")
     parser.add_argument("-p", "--project-dir", required=True,
                         help="OBS project checkout directory")
     parser.add_argument("--tarball-dir", required=True,
