@@ -48,9 +48,6 @@ def format_log_entries(commit_from, commit_to):
     all_commits_cmd = ["git", "log", "--pretty=format:%H", "--no-merges",
                        "{}..{}".format(commit_from, commit_to)]
 
-    import pdb
-    pdb.set_trace()
-
     all_commits = subprocess.check_output(all_commits_cmd)
     all_commits = all_commits.decode().split("\n")
 
