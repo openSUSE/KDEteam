@@ -125,7 +125,7 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
         for line in f:
             if f.isfirstline():
                 print(changes_entry)
-            print(line.strip())
+            print(line.rstrip())
 
 
 def get_current_version(specfile: Path):
@@ -195,7 +195,7 @@ def update_version(specfile, version_to, patches=None):
 
     with fileinput.input(specfile, inplace=True) as f:
         for line in f:
-            line = line.strip()
+            line = line.rstrip()
             if VERSION_RE.match(line):
                 line = VERSION_RE.sub(r"\g<1>" + version_to, line)
             # TODO: Do the same for patches
@@ -257,6 +257,8 @@ def update_packages(parser, context, args):
                         default="bugfix")
     parser.add_argument("-p", "--project-dir", required=True,
                         help="OBS project checkout directory")
+    parser.add_argument("-b", "--stable-branch",
+                        help="Use information from this branch if a tag is not available")
     parser.add_argument("--tarball-dir", required=True,
                         help="Directory containing source tarballs")
     parser.add_argument("-s", "--checkout-dir",
