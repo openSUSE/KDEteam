@@ -44,8 +44,10 @@ def cd(subpath):
     finally:
         os.chdir(old_path)
 
+# Changelog handling
 
-def format_log_entries(commit_from, commit_to):
+
+def format_log_entries(commit_from: str, commit_to: str) -> str:
 
     all_commits_cmd = ["git", "log", "--pretty=format:%H", "--no-merges",
                        "{}..{}".format(commit_from, commit_to)]
@@ -128,6 +130,46 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
             print(line.rstrip())
 
 
+def record_changes(package_name, checkout_dir, version_from, version_to,
+                   upstream_reponame, changetype="bugfix",
+                   kind="applications", changes_file=None,
+                   committer=None):
+
+    commit_from = "v{}".format(version_from)
+    commit_to = "v{}".format(version_to)
+
+    upstream_repo_path = Path(checkout_dir).expanduser() / upstream_reponame
+
+    if not upstream_repo_path.exists():
+        print("Missing checkout for {}".format(upstream_reponame))
+        create_dummy_changes_entry(version_to, changes_file, kind)
+        return
+
+    with cd(upstream_repo_path):
+
+        if not upstream_tag_available(commit_to):
+
+            if package_name == "kdelibs":
+                commit_to = "KDE/4.14"
+            else:
+                commit_to = "Applications/16.12"  # FIXME
+
+        create_changes_entry(upstream_reponame, commit_from, commit_to,
+                             version_from, version_to, changetype, kind,
+                             changes_file, committer)
+
+
+def upstream_tag_available(tag):
+
+    command = ("git tag -l | grep {}".format(tag))
+    code = subprocess.call(command, shell=True)
+
+    return code == 0
+
+
+# Spec file handling
+
+
 def get_current_version(specfile: Path):
     specfile = Spec.from_file(str(specfile))
     version = specfile.version
@@ -136,8 +178,22 @@ def get_current_version(specfile: Path):
     return version, patches
 
 
+def update_version(specfile, version_to, patches=None):
+
+    with fileinput.input(specfile, inplace=True) as f:
+        for line in f:
+            line = line.rstrip()
+            if VERSION_RE.match(line):
+                line = VERSION_RE.sub(r"\g<1>" + version_to, line)
+            # TODO: Do the same for patches
+            print(line)
+
+
 def update_patches(specfile_source, specfile_destination):
     pass
+
+
+# OBS and package update handling
 
 
 def update_from_develproject(source_project, destination_project):
@@ -146,7 +202,7 @@ def update_from_develproject(source_project, destination_project):
 
 def update_package(package_name, version_to, tarball_directory, obs_directory,
                    committer, kind="applications", changetype="bugfix",
-                   checkout_dir=None):
+                   checkout_dir=None) -> bool:
 
     tarball_directory = Path(tarball_directory).expanduser()
     tarball_name = "{name}-{version_to}.tar.xz".format(name=package_name,
@@ -191,55 +247,7 @@ def update_package(package_name, version_to, tarball_directory, obs_directory,
     return True
 
 
-def update_version(specfile, version_to, patches=None):
-
-    with fileinput.input(specfile, inplace=True) as f:
-        for line in f:
-            line = line.rstrip()
-            if VERSION_RE.match(line):
-                line = VERSION_RE.sub(r"\g<1>" + version_to, line)
-            # TODO: Do the same for patches
-            print(line)
-
-
-def upstream_tag_available(tag):
-
-    command = ("git tag -l | grep {}".format(tag))
-    code = subprocess.call(command, shell=True)
-
-    return code == 0
-
-
-def record_changes(package_name, checkout_dir, version_from, version_to,
-                   upstream_reponame, changetype="bugfix",
-                   kind="applications", changes_file=None,
-                   committer=None):
-
-    commit_from = "v{}".format(version_from)
-    commit_to = "v{}".format(version_to)
-
-    upstream_repo_path = Path(checkout_dir).expanduser() / upstream_reponame
-
-    if not upstream_repo_path.exists():
-        print("Missing checkout for {}".format(upstream_reponame))
-        create_dummy_changes_entry(version_to, changes_file, kind)
-        return
-
-    with cd(upstream_repo_path):
-
-        if not upstream_tag_available(commit_to):
-
-            if package_name == "kdelibs":
-                commit_to = "KDE/4.14"
-            else:
-                commit_to = "Applications/16.12"  # FIXME
-
-        create_changes_entry(upstream_reponame, commit_from, commit_to,
-                             version_from, version_to, changetype, kind,
-                             changes_file, committer)
-
-
-def checkout_package(obs_package_dir):
+def checkout_package(obs_package_dir: Path) -> None:
 
     if obs_package_dir.exists():
         with cd(obs_package_dir):
@@ -247,6 +255,8 @@ def checkout_package(obs_package_dir):
     else:
         with cd(obs_package_dir.parent):
             subprocess.check_call(["osc", "co", obs_package_dir.name])
+
+# Command line parsing and subparsers
 
 
 @subcmd
@@ -257,8 +267,9 @@ def update_packages(parser, context, args):
                         default="bugfix")
     parser.add_argument("-p", "--project-dir", required=True,
                         help="OBS project checkout directory")
-    parser.add_argument("-b", "--stable-branch",
-                        help="Use information from this branch if a tag is not available")
+    parser.add_argument(
+        "-b", "--stable-branch",
+        help="Use information from this branch if a tag is not available")
     parser.add_argument("--tarball-dir", required=True,
                         help="Directory containing source tarballs")
     parser.add_argument("-s", "--checkout-dir",
@@ -270,7 +281,7 @@ def update_packages(parser, context, args):
     parser.add_argument("-e", "--committer", default="", required=True,
                         help="Email address of the committer")
     parser.add_argument("packagelist", nargs="+",
-                        help="Files with package lists")
+                        help="File(s) with package lists")
 
     options = parser.parse_args(args)
 
