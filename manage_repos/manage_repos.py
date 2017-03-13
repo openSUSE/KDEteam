@@ -87,7 +87,8 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
         yield entry
 
 
-def create_dummy_changes_entry(version_to, destination, kind):
+def create_dummy_changes_entry(version_to: str, destination: str,
+                               kind: str) -> None:
 
     contents = "  * Update to {}".format(version_to)
     date = time.strftime("%a %d %b %H.%M.%S %Z %Y")
@@ -102,8 +103,10 @@ def create_dummy_changes_entry(version_to, destination, kind):
             print(line.strip())
 
 
-def create_changes_entry(repo_name, commit_from, commit_to, version_from,
-                         version_to, changetype, kind, destination, committer):
+def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
+                         version_from: str, version_to: str,
+                         changetype: str, kind: str, destination: str,
+                         committer: str) -> None:
 
     url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
 
@@ -130,10 +133,11 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
             print(line.rstrip())
 
 
-def record_changes(package_name, checkout_dir, version_from, version_to,
-                   upstream_reponame, changetype="bugfix",
-                   kind="applications", changes_file=None,
-                   committer=None, branch=None):
+def record_changes(package_name: str, checkout_dir: str,
+                   version_from: str, version_to: str, upstream_reponame: str,
+                   changetype: str="bugfix", kind: str="applications",
+                   changes_file: str=None, committer: str =None,
+                   branch: str=None) -> None:
 
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
