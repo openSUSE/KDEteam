@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 from contextlib import contextmanager
 from collections import Counter
 import fileinput
@@ -18,7 +17,7 @@ from pyrpm.spec import Spec
 
 SPECIAL_CASES = ("kdelibs4", "kde-l10n")
 VERSION_RE = re.compile(r"(^Version:\s+).*")
-PATCH_RE = re.compile("(^Patch[0-9]{,}:).*")
+PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
 PROJECT_NAMES = {"plasma": "KDE:Frameworks5",
                  "frameworks": "KDE:Frameworks5",
                  "applications": "KDE:Applications"}
