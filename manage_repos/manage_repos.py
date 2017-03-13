@@ -133,7 +133,7 @@ def create_changes_entry(repo_name, commit_from, commit_to, version_from,
 def record_changes(package_name, checkout_dir, version_from, version_to,
                    upstream_reponame, changetype="bugfix",
                    kind="applications", changes_file=None,
-                   committer=None):
+                   committer=None, branch=None):
 
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
@@ -152,14 +152,14 @@ def record_changes(package_name, checkout_dir, version_from, version_to,
             if package_name == "kdelibs":
                 commit_to = "KDE/4.14"
             else:
-                commit_to = "Applications/16.12"  # FIXME
+                commit_to = branch
 
         create_changes_entry(upstream_reponame, commit_from, commit_to,
                              version_from, version_to, changetype, kind,
                              changes_file, committer)
 
 
-def upstream_tag_available(tag):
+def upstream_tag_available(tag: str) -> bool:
 
     command = ("git tag -l | grep {}".format(tag))
     code = subprocess.call(command, shell=True)
@@ -170,7 +170,7 @@ def upstream_tag_available(tag):
 # Spec file handling
 
 
-def get_current_version(specfile: Path):
+def get_current_version(specfile: Path) -> (str, list):
     specfile = Spec.from_file(str(specfile))
     version = specfile.version
     patches = None if not hasattr(specfile, "patches") else specfile.patches
@@ -178,7 +178,7 @@ def get_current_version(specfile: Path):
     return version, patches
 
 
-def update_version(specfile, version_to, patches=None):
+def update_version(specfile: str, version_to: str, patches=None) -> None:
 
     with fileinput.input(specfile, inplace=True) as f:
         for line in f:
@@ -200,9 +200,10 @@ def update_from_develproject(source_project, destination_project):
     pass
 
 
-def update_package(package_name, version_to, tarball_directory, obs_directory,
-                   committer, kind="applications", changetype="bugfix",
-                   checkout_dir=None) -> bool:
+def update_package(package_name: str, version_to: str, tarball_directory: str,
+                   obs_directory: str, *, committer: str,
+                   kind: str="applications", changetype: str="bugfix",
+                   checkout_dir: str=None, upstream_branch: str=None) -> bool:
 
     tarball_directory = Path(tarball_directory).expanduser()
     tarball_name = "{name}-{version_to}.tar.xz".format(name=package_name,
@@ -294,9 +295,10 @@ def update_packages(parser, context, args):
                 result = update_package(name, options.version_to,
                                         options.tarball_dir,
                                         options.project_dir,
-                                        options.committer,
-                                        options.kind, options.type,
-                                        options.checkout_dir)
+                                        committer=options.committer,
+                                        kind=options.kind, type=options.type,
+                                        checkout_dir=options.checkout_dir,
+                                        upstream_branch=options.stable_branch)
                 if result:
                     results.update(["updated"])
                 else:
