@@ -134,10 +134,10 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
 
 
 def record_changes(package_name: str, checkout_dir: str,
-                   version_from: str, version_to: str, upstream_reponame: str,
-                   changetype: str="bugfix", kind: str="applications",
-                   changes_file: str=None, committer: str =None,
-                   branch: str=None) -> None:
+                   version_from: str, version_to: str, *,
+                   upstream_reponame: str, changetype: str="bugfix",
+                   kind: str="applications", changes_file: str=None,
+                   committer: str =None, branch: str=None) -> None:
 
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
@@ -244,8 +244,9 @@ def update_package(package_name: str, version_to: str, tarball_directory: str,
         update_version(specfile, version_to, patches)
         changes_file = str(obs_directory / (package_name + ".changes"))
         record_changes(package_name, checkout_dir, current_version,
-                       version_to, upstream_reponame, changetype,
-                       kind, changes_file, committer)
+                       version_to, upstream_reponame=upstream_reponame,
+                       changetype=changetype, kind=kind,
+                       changes_file=changes_file, committer=committer)
         if "kde-l10n" in package_name:
             subprocess.call("pre_checkin.sh", shell=True)
 
