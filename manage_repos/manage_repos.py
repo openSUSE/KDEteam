@@ -106,15 +106,9 @@ def create_dummy_changes_entry(version_to: str, destination: str,
             print(line.strip())
 
 
-def create_changes_entry(repo_name: str,
-                         commit_from: str,
-                         commit_to: str,
-                         version_from: str,
-                         version_to: str,
-                         changetype: str,
-                         kind: str,
-                         destination: str,
-                         committer: str) -> None:
+def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
+                         version_from: str, version_to: str, changetype: str,
+                         kind: str, destination: str, committer: str) -> None:
 
     url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
 
@@ -141,15 +135,10 @@ def create_changes_entry(repo_name: str,
             print(line.rstrip())
 
 
-def record_changes(changes_file: str,
-                   checkout_dir: str,
-                   version_from: str,
-                   version_to: str, *,
-                   upstream_reponame: str,
-                   changetype: str="bugfix",
-                   kind: str="applications",
-                   committer: str =None,
-                   branch: str=None) -> None:
+def record_changes(changes_file: str, checkout_dir: str, version_from: str,
+                   version_to: str, *, upstream_reponame: str,
+                   changetype: str="bugfix", kind: str="applications",
+                   committer: str =None, branch: str=None) -> None:
 
     package_name = changes_file.replace(".changes", "")
     commit_from = "v{}".format(version_from)
