@@ -13,14 +13,18 @@ import subprocess
 
 from arghandler import ArgumentHandler, subcmd
 from pyrpm.spec import Spec
+from sarge import run, get_stdout, shell_format
 
 
-SPECIAL_CASES = ("kdelibs4", "kde-l10n")
 VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
+
+# FIXME: Currently hardcoded
+
 PROJECT_NAMES = {"plasma": "KDE:Frameworks5",
                  "frameworks": "KDE:Frameworks5",
                  "applications": "KDE:Applications"}
+
 BASE_URL = "https://www.kde.org/announcements/"
 URL_MAPPING = {"plasma": "plasma-{version_to}.php",
                "frameworks": "kde-frameworks-{version_to}.php",
@@ -51,8 +55,9 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
     all_commits_cmd = ["git", "log", "--pretty=format:%H", "--no-merges",
                        "{}..{}".format(commit_from, commit_to)]
 
-    all_commits = subprocess.check_output(all_commits_cmd)
-    all_commits = all_commits.decode().split("\n")
+    # Catch the output and decode it (check_output returns bytes)
+
+    all_commits = get_stdout(all_commits_cmd).splitlines()
 
     if not all_commits:
         return "  * None"
@@ -63,21 +68,26 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
     for commit in all_commits:
         entry = "  * {subject} {bugs}"
         subject_cmd = ["git", "show", "-s", "--pretty=format:%s", commit]
-        subject = subprocess.check_output(subject_cmd).decode().strip()
+        subject = get_stdout(subject_cmd).strip()
 
         if "GIT_SILENT" in subject or "SVN_SILENT" in subject:
             continue
 
-        bug_content_cmd = ("git show {} | grep -E '^\s*BUG:' | "
-                           "cut -d: --fields=2 | sed 's/^/,kde#/'")
-        bug_content_cmd = bug_content_cmd.format(commit)
-        bug_content = subprocess.check_output(bug_content_cmd, shell=True)
-        bug_content = bug_content.decode()
+        # It is safer to get all output than grepping, because check_output
+        # will fail if the exit code is !=0: commit strings are small enough
+        # not to constitute a problem by storing them in memory
+        bug_content_cmd = "git show {}".format(commit)
+
+        bug_content = get_stdout(bug_content_cmd).splitlines()
+        bug_content = [line for line in bug_content if "BUG:" in line]
 
         if not bug_content:
             bug_content = ""
         else:
-            bug_content = bug_content.replace(",", "").split("\n")
+            # Split BUG: keywords and keep only the number, replace them
+            # with "kde#NNNN"
+            bug_content = ["kde#{}".format(content.split(":")[1])
+                           for content in bug_content]
             bug_content = ",".join(bug_content)
             bug_content = "({})".format(bug_content)
 
@@ -132,11 +142,16 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
             print(line.rstrip())
 
 
-def record_changes(package_name: str, checkout_dir: str,
-                   version_from: str, version_to: str, *,
-                   upstream_reponame: str, changetype: str="bugfix",
-                   kind: str="applications", changes_file: str=None,
-                   committer: str =None, branch: str=None) -> None:
+def record_changes(package_name: str,
+                   checkout_dir: str,
+                   version_from: str,
+                   version_to: str, *,
+                   upstream_reponame: str,
+                   changetype: str="bugfix",
+                   kind: str="applications",
+                   changes_file: str=None,
+                   committer: str =None,
+                   branch: str=None) -> None:
 
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
@@ -165,9 +180,9 @@ def record_changes(package_name: str, checkout_dir: str,
 def upstream_tag_available(tag: str) -> bool:
 
     command = ("git tag -l | grep {}".format(tag))
-    code = subprocess.call(command, shell=True)
+    code = run(command)
 
-    return code == 0
+    return code.returncode == 0
 
 
 # Spec file handling
@@ -203,15 +218,34 @@ def update_from_develproject(source_project, destination_project):
     pass
 
 
-def update_package(package_name: str, version_to: str, tarball_directory: str,
-                   obs_directory: str, *, committer: str,
-                   kind: str="applications", changetype: str="bugfix",
-                   checkout_dir: str=None, upstream_branch: str=None) -> bool:
+def update_package(entry: Path, version_to: str,
+                   tarball_directory: str,
+                   *,
+                   committer: str,
+                   kind: str="applications",
+                   changetype: str="bugfix",
+                   checkout_dir: str=None,
+                   upstream_branch: str=None) -> bool:
 
-    tarball_directory = Path(tarball_directory).expanduser()
-    tarball_name = "{name}-{version_to}.tar.xz".format(name=package_name,
+    package_name = entry.name
+    specfile = package_name + ".spec"
+    changes_file = package_name + ".changes"
+
+    print("Updating package {}".format(package_name))
+
+    tarball = list(entry.glob("*.tar.xz"))
+    # FIXME: Is it really correct?
+    assert len(tarball) == 1
+    tarball = tarball[0]
+
+    if kind != "applications":
+        upstream_reponame = re.sub(r"-5.*.tar.xz", "", tarball)
+    else:
+        prefix = version_to.split(".")[0]  # 16, 17, etc.
+        upstream_reponame = re.sub("-{}.*.tar.xz".format(prefix), tarball)
+
+    tarball_name = "{name}-{version_to}.tar.xz".format(name=upstream_reponame,
                                                        version_to=version_to)
-    project_name = PROJECT_NAMES[kind]
 
     done_subdir = Path(tarball_directory) / "done"
     done_subdir.mkdir(exist_ok=True)
@@ -220,15 +254,8 @@ def update_package(package_name: str, version_to: str, tarball_directory: str,
         print("Tarball {} already processed, skipping".format(tarball_name))
         return False
 
-    obs_directory = Path(obs_directory).expanduser() / package_name
-    checkout_package(obs_directory)
-
     tarball_path = tarball_directory / tarball_name
-    destination_path = obs_directory / tarball_name
-
-    # We can safely ignore "problems" with kde-l10n as they're still in SVN
-    upstream_reponame = tarball_name.replace("-{}.tar.xz".format(version_to),
-                                             "")
+    destination_path = entry / tarball_name
 
     if not tarball_path.exists():
         print("Tarball {} missing, skipping".format(tarball_name))
@@ -237,29 +264,18 @@ def update_package(package_name: str, version_to: str, tarball_directory: str,
     shutil.copy(str(tarball_path), str(destination_path))
     tarball_path.rename(done_subdir / tarball_name)
 
-    with cd(obs_directory):
-        specfile = package_name + ".spec"
-        current_version, patches = get_current_version(specfile)
-        update_version(specfile, version_to, patches)
-        changes_file = str(obs_directory / (package_name + ".changes"))
-        record_changes(package_name, checkout_dir, current_version,
-                       version_to, upstream_reponame=upstream_reponame,
-                       changetype=changetype, kind=kind,
-                       changes_file=changes_file, committer=committer)
-        if "kde-l10n" in package_name:
-            subprocess.call("pre_checkin.sh", shell=True)
+    current_version, patches = get_current_version(specfile)
+    update_version(specfile, version_to, patches)
+
+    record_changes(package_name, checkout_dir, current_version,
+                   version_to, upstream_reponame=upstream_reponame,
+                   changetype=changetype, kind=kind,
+                   changes_file=changes_file, committer=committer)
+
+    if Path("pre_checkin.sh").exists():
+        run("pre_checkin.sh", shell=True)
 
     return True
-
-
-def checkout_package(obs_package_dir: Path) -> None:
-
-    if obs_package_dir.exists():
-        with cd(obs_package_dir):
-            subprocess.check_call(["osc", "up"])
-    else:
-        with cd(obs_package_dir.parent):
-            subprocess.check_call(["osc", "co", obs_package_dir.name])
 
 # Command line parsing and subparsers
 
@@ -270,43 +286,39 @@ def update_packages(parser, context, args):
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
-    parser.add_argument("-p", "--project-dir", required=True,
-                        help="OBS project checkout directory")
     parser.add_argument(
         "-b", "--stable-branch",
         help="Use information from this branch if a tag is not available")
     parser.add_argument("--tarball-dir", required=True,
                         help="Directory containing source tarballs")
-    parser.add_argument("-s", "--checkout-dir",
-                        help="KDE source checkout directory (optional)")
     parser.add_argument("--version-to",
                         help="New version to update to")
     parser.add_argument("-k", "--kind", default="applications",
                         choices=("plasma", "frameworks", "applications"))
     parser.add_argument("-e", "--committer", default="", required=True,
                         help="Email address of the committer")
-    parser.add_argument("packagelist", nargs="+",
-                        help="File(s) with package lists")
+    parser.add_argument("directory", help="Directory with the OBS checkout")
 
     options = parser.parse_args(args)
 
     results = Counter()
 
-    for filename in options.packagelist:
-        with open(filename) as handle:
-            for line in handle:
-                name = line.strip()
-                result = update_package(name, options.version_to,
-                                        options.tarball_dir,
-                                        options.project_dir,
-                                        committer=options.committer,
-                                        kind=options.kind, type=options.type,
-                                        checkout_dir=options.checkout_dir,
-                                        upstream_branch=options.stable_branch)
-                if result:
-                    results.update(["updated"])
-                else:
-                    results.update(["failedskipped"])
+    for entry in Path(options.directory).iterdir():
+        if not entry.isdir():
+            continue
+
+        with cd(entry):
+            result = update_package(entry, options.version_to,
+                                    options.tarball_dir,
+                                    committer=options.committer,
+                                    kind=options.kind, type=options.type,
+                                    checkout_dir=options.checkout_dir,
+                                    upstream_branch=options.stable_branch)
+
+            if result:
+                results.update(["updated"])
+            else:
+                results.update(["failedskipped"])
 
     print("Processed {} packages: updated {}, failed/skipped {}".format(
         results["updated"], results["failedskipped"]))
