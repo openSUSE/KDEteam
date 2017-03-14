@@ -112,9 +112,14 @@ def create_dummy_changes_entry(version_to: str, destination: str,
             print(line.strip())
 
 
-def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
-                         version_from: str, version_to: str,
-                         changetype: str, kind: str, destination: str,
+def create_changes_entry(repo_name: str,
+                         commit_from: str,
+                         commit_to: str,
+                         version_from: str,
+                         version_to: str,
+                         changetype: str,
+                         kind: str,
+                         destination: str,
                          committer: str) -> None:
 
     url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
