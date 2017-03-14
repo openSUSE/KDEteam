@@ -19,12 +19,6 @@ from sarge import run, get_stdout, shell_format
 VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
 
-# FIXME: Currently hardcoded
-
-PROJECT_NAMES = {"plasma": "KDE:Frameworks5",
-                 "frameworks": "KDE:Frameworks5",
-                 "applications": "KDE:Applications"}
-
 BASE_URL = "https://www.kde.org/announcements/"
 URL_MAPPING = {"plasma": "plasma-{version_to}.php",
                "frameworks": "kde-frameworks-{version_to}.php",
@@ -208,14 +202,9 @@ def update_version(specfile: str, version_to: str, patches=None) -> None:
             print(line)
 
 
-def update_package(entry: Path,
-                   version_to: str,
-                   tarball_directory: str,
-                   *,
-                   committer: str,
-                   kind: str="applications",
-                   changetype: str="bugfix",
-                   checkout_dir: str=None,
+def update_package(entry: Path, version_to: str, tarball_directory: str, *,
+                   committer: str, kind: str="applications",
+                   changetype: str="bugfix", checkout_dir: str=None,
                    upstream_branch: str=None) -> bool:
 
     package_name = entry.name
