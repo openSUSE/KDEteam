@@ -147,17 +147,17 @@ def create_changes_entry(repo_name: str,
             print(line.rstrip())
 
 
-def record_changes(package_name: str,
+def record_changes(changes_file: str,
                    checkout_dir: str,
                    version_from: str,
                    version_to: str, *,
                    upstream_reponame: str,
                    changetype: str="bugfix",
                    kind: str="applications",
-                   changes_file: str=None,
                    committer: str =None,
                    branch: str=None) -> None:
 
+    package_name = changes_file.replace(".changes", "")
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
 
@@ -199,11 +199,14 @@ def parse_spec(specfile: Path) -> (str, list):
     version = specfile.version
     # FIXME: Assumes Source0 is always the tarball
     upstream_source = specfile.sources[0]
+
     if urlparse(upstream_source).scheme:
-        # URL in source:
+        # URL in source: get the file name
         upstream_source = os.path.basename(urlparse(upstream_source).path)
+
     upstream_source = upstream_source.replace("-%{version}.tar.xz", "")
     # Expand things like %{name}
+    # FIXME: Won't work for special oS macros
     upstream_source = replace_macros(upstream_source, specfile)
 
     patches = None if not hasattr(specfile, "patches") else specfile.patches
@@ -222,7 +225,8 @@ def update_version(specfile: str, version_to: str, patches=None) -> None:
             print(line)
 
 
-def update_package(entry: Path, version_to: str,
+def update_package(entry: Path,
+                   version_to: str,
                    tarball_directory: str,
                    *,
                    committer: str,
@@ -261,10 +265,9 @@ def update_package(entry: Path, version_to: str,
 
     update_version(specfile, version_to, patches)
 
-    record_changes(package_name, checkout_dir, current_version,
+    record_changes(changes_file, checkout_dir, current_version,
                    version_to, upstream_reponame=upstream_reponame,
-                   changetype=changetype, kind=kind,
-                   changes_file=changes_file, committer=committer)
+                   changetype=changetype, kind=kind, committer=committer)
 
     if Path("pre_checkin.sh").exists():
         run("pre_checkin.sh", shell=True)
@@ -273,9 +276,28 @@ def update_package(entry: Path, version_to: str,
 
 # Command line parsing and subparsers
 
+
 @subcmd
-def update_changes(parser, context, args):
-    pass
+def make_changes(parser, context, args):
+
+    parser.add_argument("--version-from", help="New version to update from")
+    parser.add_argument("--version-to", help="New version to update to")
+    parser.add_argument("--checkout-dir",
+                        help="Directory containing source checkouts")
+    parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
+                        help="Type of release (bugfix or feature)",
+                        default="bugfix")
+    parser.add_argument("-e", "--committer", required=True,
+                        help="Email address of the committer")
+    parser.add_argument("changes_file", help="Changes file to update")
+    parser.add_argument("upstream_name", help="Upstream package name")
+
+    options = parser.parse_args(args)
+    record_changes(options.changes_file, options.checkout_dir,
+                   options.version_from, options.version_to,
+                   upstream_reponame=options.upstream_name,
+                   committer=options.committer, branch=None)
+
 
 @subcmd
 def update_packages(parser, context, args):
@@ -288,11 +310,12 @@ def update_packages(parser, context, args):
         help="Use information from this branch if a tag is not available")
     parser.add_argument("--tarball-dir", required=True,
                         help="Directory containing source tarballs")
-    parser.add_argument("--version-to",
-                        help="New version to update to")
+    parser.add_argument("--checkout-dir",
+                        help="Directory containing source checkouts")
+    parser.add_argument("--version-to", help="New version to update to")
     parser.add_argument("-k", "--kind", default="applications",
                         choices=("plasma", "frameworks", "applications"))
-    parser.add_argument("-e", "--committer", default="", required=True,
+    parser.add_argument("-e", "--committer", required=True,
                         help="Email address of the committer")
     parser.add_argument("directory", help="Directory with the OBS checkout")
 
