@@ -9,10 +9,10 @@ import re
 import shutil
 import tempfile
 import time
-import subprocess
+from urllib.parse import urlparse
 
 from arghandler import ArgumentHandler, subcmd
-from pyrpm.spec import Spec
+from pyrpm.spec import Spec, replace_macros
 from sarge import run, get_stdout, shell_format
 
 
@@ -193,12 +193,22 @@ def upstream_tag_available(tag: str) -> bool:
 # Spec file handling
 
 
-def get_current_version(specfile: Path) -> (str, list):
+def parse_spec(specfile: Path) -> (str, list):
+
     specfile = Spec.from_file(str(specfile))
     version = specfile.version
+    # FIXME: Assumes Source0 is always the tarball
+    upstream_source = specfile.sources[0]
+    if urlparse(upstream_source).scheme:
+        # URL in source:
+        upstream_source = os.path.basename(urlparse(upstream_source).path)
+    upstream_source = upstream_source.replace("-%{version}.tar.xz", "")
+    # Expand things like %{name}
+    upstream_source = replace_macros(upstream_source, specfile)
+
     patches = None if not hasattr(specfile, "patches") else specfile.patches
 
-    return version, patches
+    return version, patches, upstream_source
 
 
 def update_version(specfile: str, version_to: str, patches=None) -> None:
@@ -210,17 +220,6 @@ def update_version(specfile: str, version_to: str, patches=None) -> None:
                 line = VERSION_RE.sub(r"\g<1>" + version_to, line)
             # TODO: Do the same for patches
             print(line)
-
-
-def update_patches(specfile_source, specfile_destination):
-    pass
-
-
-# OBS and package update handling
-
-
-def update_from_develproject(source_project, destination_project):
-    pass
 
 
 def update_package(entry: Path, version_to: str,
@@ -236,18 +235,9 @@ def update_package(entry: Path, version_to: str,
     specfile = package_name + ".spec"
     changes_file = package_name + ".changes"
 
+    current_version, patches, upstream_reponame = parse_spec(specfile)
+
     print("Updating package {}".format(package_name))
-
-    tarball = list(entry.glob("*.tar.xz"))
-    # FIXME: Is it really correct?
-    assert len(tarball) == 1
-    tarball = tarball[0]
-
-    if kind != "applications":
-        upstream_reponame = re.sub(r"-5.*.tar.xz", "", tarball)
-    else:
-        prefix = version_to.split(".")[0]  # 16, 17, etc.
-        upstream_reponame = re.sub("-{}.*.tar.xz".format(prefix), tarball)
 
     tarball_name = "{name}-{version_to}.tar.xz".format(name=upstream_reponame,
                                                        version_to=version_to)
@@ -269,7 +259,6 @@ def update_package(entry: Path, version_to: str,
     shutil.copy(str(tarball_path), str(destination_path))
     tarball_path.rename(done_subdir / tarball_name)
 
-    current_version, patches = get_current_version(specfile)
     update_version(specfile, version_to, patches)
 
     record_changes(package_name, checkout_dir, current_version,
@@ -284,6 +273,9 @@ def update_package(entry: Path, version_to: str,
 
 # Command line parsing and subparsers
 
+@subcmd
+def update_changes(parser, context, args):
+    pass
 
 @subcmd
 def update_packages(parser, context, args):
@@ -327,11 +319,6 @@ def update_packages(parser, context, args):
 
     print("Processed {} packages: updated {}, failed/skipped {}".format(
         results["updated"], results["failedskipped"]))
-
-
-@subcmd
-def update_source_services(parser, context, args):
-    pass
 
 
 def main():
