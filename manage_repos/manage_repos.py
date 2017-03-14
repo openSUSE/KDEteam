@@ -55,12 +55,13 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
     all_commits = get_stdout(all_commits_cmd).splitlines()
 
     if not all_commits:
-        return "  * None"
+        yield "  * None"
 
     if len(all_commits) > 30:
-        return "- Too many changes to list here"
+        yield "  * Too many changes to list here"
 
     for commit in all_commits:
+
         subject_cmd = ["git", "show", "-s", "--pretty=format:%s", commit]
         subject = get_stdout(subject_cmd).strip()
 
@@ -209,7 +210,9 @@ def update_package(entry: Path, version_to: str, tarball_directory: str, *,
 
     package_name = entry.name
     specfile = package_name + ".spec"
-    changes_file = package_name + ".changes"
+    # Need to keep the absolute path as we're moving elsewhere when
+    # reading the checkout
+    changes_file = str(Path(package_name + ".changes").absolute())
 
     current_version, patches, upstream_reponame = parse_spec(specfile)
 
@@ -218,7 +221,8 @@ def update_package(entry: Path, version_to: str, tarball_directory: str, *,
     tarball_name = "{name}-{version_to}.tar.xz".format(name=upstream_reponame,
                                                        version_to=version_to)
 
-    done_subdir = Path(tarball_directory) / "done"
+    tarball_directory = Path(tarball_directory)
+    done_subdir = tarball_directory / "done"
     done_subdir.mkdir(exist_ok=True)
 
     if (done_subdir / tarball_name).exists():
@@ -254,7 +258,7 @@ def make_changes(parser, context, args):
 
     parser.add_argument("--version-from", help="New version to update from")
     parser.add_argument("--version-to", help="New version to update to")
-    parser.add_argument("--checkout-dir",
+    parser.add_argument("-s", "--checkout-dir",
                         help="Directory containing source checkouts")
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
@@ -282,7 +286,7 @@ def update_packages(parser, context, args):
         help="Use information from this branch if a tag is not available")
     parser.add_argument("--tarball-dir", required=True,
                         help="Directory containing source tarballs")
-    parser.add_argument("--checkout-dir",
+    parser.add_argument("-s", "--checkout-dir",
                         help="Directory containing source checkouts")
     parser.add_argument("--version-to", help="New version to update to")
     parser.add_argument("-k", "--kind", default="applications",
@@ -296,14 +300,15 @@ def update_packages(parser, context, args):
     results = Counter()
 
     for entry in Path(options.directory).iterdir():
-        if not entry.isdir():
+
+        if not entry.is_dir() or entry.name.startswith("."):
             continue
 
         with cd(entry):
             result = update_package(entry, options.version_to,
                                     options.tarball_dir,
                                     committer=options.committer,
-                                    kind=options.kind, type=options.type,
+                                    kind=options.kind, changetype=options.type,
                                     checkout_dir=options.checkout_dir,
                                     upstream_branch=options.stable_branch)
 
@@ -311,9 +316,10 @@ def update_packages(parser, context, args):
                 results.update(["updated"])
             else:
                 results.update(["failedskipped"])
+        results.update(["total"])
 
     print("Processed {} packages: updated {}, failed/skipped {}".format(
-        results["updated"], results["failedskipped"]))
+        results["total"], results["updated"], results["failedskipped"]))
 
 
 def main():
