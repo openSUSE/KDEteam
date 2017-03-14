@@ -36,6 +36,7 @@ CHANGES_TEMPLATE = """
 
 {contents}
 """
+CHANGES_ENTRY = "  * {subject} {bugs}"
 
 
 @contextmanager
@@ -66,32 +67,25 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
         return "- Too many changes to list here"
 
     for commit in all_commits:
-        entry = "  * {subject} {bugs}"
         subject_cmd = ["git", "show", "-s", "--pretty=format:%s", commit]
         subject = get_stdout(subject_cmd).strip()
 
         if "GIT_SILENT" in subject or "SVN_SILENT" in subject:
             continue
 
-        # It is safer to get all output than grepping, because check_output
-        # will fail if the exit code is !=0: commit strings are small enough
-        # not to constitute a problem by storing them in memory
         bug_content_cmd = "git show {}".format(commit)
 
         bug_content = get_stdout(bug_content_cmd).splitlines()
-        bug_content = [line for line in bug_content if "BUG:" in line]
+        # Split BUG: keywords and keep only the number, replace them
+        # with "kde#NNNN"
+        bug_content = ["kde#{}".format(line.split(":")[1])
+                       for line in bug_content if line.startswith("BUG:")]
+        # Empty string if no entries, else join all bugs and wrap in ()
+        bug_content = "" if not bug_content else "({})".format(
+            ", ".join(bug_content))
 
-        if not bug_content:
-            bug_content = ""
-        else:
-            # Split BUG: keywords and keep only the number, replace them
-            # with "kde#NNNN"
-            bug_content = ["kde#{}".format(content.split(":")[1])
-                           for content in bug_content]
-            bug_content = ",".join(bug_content)
-            bug_content = "({})".format(bug_content)
-
-        entry = entry.format(subject=subject, bugs=bug_content).rstrip()
+        entry = CHANGES_ENTRY.format(subject=subject,
+                                     bugs=bug_content).rstrip()
 
         yield entry
 
