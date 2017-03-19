@@ -89,7 +89,7 @@ def create_dummy_changes_entry(version_to: str, destination: str,
                                kind: str) -> None:
 
     contents = "  * Update to {}".format(version_to)
-    date = time.strftime("%a %d %b %H.%M.%S %Z %Y")
+    date = time.strftime("%a %b %d %H:%M:%S %Z %Y")
     url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
     committer = ""
     changes_entry = CHANGES_TEMPLATE.format(date=date, contents=contents,
@@ -118,7 +118,7 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
         contents.append(entry)
 
     contents = "\n".join(contents)
-    date = time.strftime("%a %d %b %H.%M.%S %Z %Y")
+    date = time.strftime("%a %b %d %H:%M:%S %Z %Y")
     changes_entry = CHANGES_TEMPLATE.lstrip()
     changes_entry = changes_entry.format(date=date, contents=contents,
                                          committer=committer)
@@ -216,6 +216,11 @@ def update_package(entry: Path, version_to: str, tarball_directory: Path, *,
     changes_file = str(Path(package_name + ".changes").absolute())
 
     current_version, patches, upstream_reponame = parse_spec(specfile)
+
+    if current_version == version_to:
+        print("Package {} is already at the latest version {}. Skipping.".format(
+            package_name, current_version))
+        return False
 
     print("Updating package {}".format(package_name))
 
