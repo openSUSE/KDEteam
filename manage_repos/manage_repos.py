@@ -130,7 +130,7 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
             print(line.rstrip())
 
 
-def record_changes(changes_file: str, checkout_dir: str, version_from: str,
+def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
                    version_to: str, *, upstream_reponame: str,
                    changetype: str="bugfix", kind: str="applications",
                    committer: str =None, branch: str=None) -> None:
@@ -139,7 +139,7 @@ def record_changes(changes_file: str, checkout_dir: str, version_from: str,
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
 
-    upstream_repo_path = Path(checkout_dir).expanduser() / upstream_reponame
+    upstream_repo_path = checkout_dir / upstream_reponame
 
     if not upstream_repo_path.exists():
         print("Missing checkout for {}".format(upstream_reponame))
@@ -150,7 +150,7 @@ def record_changes(changes_file: str, checkout_dir: str, version_from: str,
 
         if not upstream_tag_available(commit_to):
 
-            if package_name == "kdelibs":
+            if package_name == "kdelibs4":
                 commit_to = "KDE/4.14"
             else:
                 commit_to = branch
@@ -178,6 +178,7 @@ def parse_spec(specfile: Path) -> (str, list):
     # FIXME: Assumes Source0 is always the tarball
     upstream_source = specfile.sources[0]
 
+    # Check for an URL scheme, if present assume an URL in Source:
     if urlparse(upstream_source).scheme:
         # URL in source: get the file name
         upstream_source = os.path.basename(urlparse(upstream_source).path)
@@ -203,9 +204,9 @@ def update_version(specfile: str, version_to: str, patches=None) -> None:
             print(line)
 
 
-def update_package(entry: Path, version_to: str, tarball_directory: str, *,
+def update_package(entry: Path, version_to: str, tarball_directory: Path, *,
                    committer: str, kind: str="applications",
-                   changetype: str="bugfix", checkout_dir: str=None,
+                   changetype: str="bugfix", checkout_dir: Path=None,
                    upstream_branch: str=None) -> bool:
 
     package_name = entry.name
@@ -221,7 +222,6 @@ def update_package(entry: Path, version_to: str, tarball_directory: str, *,
     tarball_name = "{name}-{version_to}.tar.xz".format(name=upstream_reponame,
                                                        version_to=version_to)
 
-    tarball_directory = Path(tarball_directory)
     done_subdir = tarball_directory / "done"
     done_subdir.mkdir(exist_ok=True)
 
@@ -269,7 +269,10 @@ def make_changes(parser, context, args):
     parser.add_argument("upstream_name", help="Upstream package name")
 
     options = parser.parse_args(args)
-    record_changes(options.changes_file, options.checkout_dir,
+    # We "cd" inside other directories, so make the path to outside ones
+    # absolute
+    checkout_dir = Path(options.checkout_dir).expanduser().absolute()
+    record_changes(options.changes_file, checkout_dir,
                    options.version_from, options.version_to,
                    upstream_reponame=options.upstream_name,
                    committer=options.committer, branch=None)
@@ -298,18 +301,24 @@ def update_packages(parser, context, args):
     options = parser.parse_args(args)
 
     results = Counter()
+    # We "cd" inside other directories, so make the path to outside ones
+    # absolute
+    tarball_directory = Path(options.tarball_dir).expanduser().absolute()
+    checkout_dir = Path(options.checkout_dir).expanduser().absolute()
 
     for entry in Path(options.directory).iterdir():
 
         if not entry.is_dir() or entry.name.startswith("."):
             continue
 
+        entry = entry.absolute()
+
         with cd(entry):
             result = update_package(entry, options.version_to,
-                                    options.tarball_dir,
+                                    tarball_directory,
                                     committer=options.committer,
                                     kind=options.kind, changetype=options.type,
-                                    checkout_dir=options.checkout_dir,
+                                    checkout_dir=checkout_dir,
                                     upstream_branch=options.stable_branch)
 
             if result:
