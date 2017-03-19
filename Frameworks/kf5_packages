@@ -10,6 +10,7 @@ kapidox
 karchive
 kauth
 kbookmarks
+kcoreaddons
 kcmutils
 kcodecs
 kcompletion
@@ -43,6 +44,7 @@ kjs
 kjsembed
 kmediaplayer
 knotifications
+knewstuff
 knotifyconfig
 kpackage
 kparts
@@ -53,6 +55,7 @@ kross
 krunner
 kservice
 ktextwidgets
+ktexteditor
 kunitconversion
 kwallet
 kwayland
