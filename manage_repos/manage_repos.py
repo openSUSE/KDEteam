@@ -139,6 +139,12 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
 
+    if checkout_dir is None:
+        print("No checkout directory supplied for {}".format(
+            upstream_reponame))
+        create_dummy_changes_entry(version_to, changes_file, kind)
+        return
+
     upstream_repo_path = checkout_dir / upstream_reponame
 
     if not upstream_repo_path.exists():
@@ -320,8 +326,15 @@ def update_packages(parser, context, args):
     results = Counter()
     # We "cd" inside other directories, so make the path to outside ones
     # absolute
-    tarball_directory = Path(options.tarball_dir).expanduser().absolute()
-    checkout_dir = Path(options.checkout_dir).expanduser().absolute()
+    if options.tarball_dir is not None:
+        tarball_directory = Path(options.tarball_dir).expanduser().absolute()
+    else:
+        tarball_directory = None
+
+    if options.checkout_dir is not None:
+        checkout_dir = Path(options.checkout_dir).expanduser().absolute()
+    else:
+        checkout_dir = None
 
     for entry in Path(options.directory).iterdir():
 
