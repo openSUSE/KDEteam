@@ -304,7 +304,7 @@ def update_packages(parser, context, args):
     parser.add_argument(
         "-b", "--stable-branch",
         help="Use information from this branch if a tag is not available")
-    parser.add_argument("--tarball-dir", required=True,
+    parser.add_argument("--tarball-dir",
                         help="Directory containing source tarballs")
     parser.add_argument("-s", "--checkout-dir",
                         help="Directory containing source checkouts")
