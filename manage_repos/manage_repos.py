@@ -86,12 +86,10 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
 
 
 def create_dummy_changes_entry(version_to: str, destination: str,
-                               kind: str) -> None:
+                               kind: str, committer: str) -> None:
 
     contents = "  * Update to {}".format(version_to)
     date = time.strftime("%a %b %d %H:%M:%S %Z %Y")
-    url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
-    committer = ""
     changes_entry = CHANGES_TEMPLATE.format(date=date, contents=contents,
                                             committer=committer)
     with fileinput.input(destination, inplace=True) as f:
@@ -105,13 +103,15 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
                          version_from: str, version_to: str, changetype: str,
                          kind: str, destination: str, committer: str) -> None:
 
-    url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
-
     contents = list()
     contents.append("- Update to {}".format(version_to))
     contents.append("  * New {} release".format(changetype))
-    contents.append("  * For more details please see:")
-    contents.append("  * {}".format(url))
+
+    if kind != "other":
+        url = BASE_URL + URL_MAPPING[kind].format(version_to=version_to)
+        contents.append("  * For more details please see:")
+        contents.append("  * {}".format(url))
+
     contents.append("- Changes since {}:".format(version_from))
 
     for entry in format_log_entries(commit_from, commit_to):
@@ -142,14 +142,16 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
     if checkout_dir is None:
         print("No checkout directory supplied for {}".format(
             upstream_reponame))
-        create_dummy_changes_entry(version_to, changes_file, kind)
+        create_dummy_changes_entry(version_to, changes_file, kind,
+                                   committer)
         return
 
     upstream_repo_path = checkout_dir / upstream_reponame
 
     if not upstream_repo_path.exists():
         print("Missing checkout for {}".format(upstream_reponame))
-        create_dummy_changes_entry(version_to, changes_file, kind)
+        create_dummy_changes_entry(version_to, changes_file, kind,
+                                   committer)
         return
 
     with cd(upstream_repo_path):
@@ -316,7 +318,8 @@ def update_packages(parser, context, args):
                         help="Directory containing source checkouts")
     parser.add_argument("--version-to", help="New version to update to")
     parser.add_argument("-k", "--kind", default="applications",
-                        choices=("plasma", "frameworks", "applications"))
+                        choices=("plasma", "frameworks", "applications",
+                                 "other"))
     parser.add_argument("-e", "--committer", required=True,
                         help="Email address of the committer")
     parser.add_argument("directory", help="Directory with the OBS checkout")
