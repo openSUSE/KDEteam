@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from contextlib import contextmanager
-from collections import Counter
+from collections import defaultdict
 import fileinput
 import os
 from pathlib import Path
@@ -50,6 +50,22 @@ def _add_patch_information(contents: list, patches: list, text: str=None):
     contents.append(text)
     for patch in patches:
         contents.append(CHANGES_ENTRY.format(subject=patch, bugs=""))
+
+
+def _report_changes(counts):
+
+    total = sum(len(value) for value in counts.values())
+    updated = len(counts.get("updated", set()))
+    failedskipped = len(counts.get("failedskipped", set()))
+    missing = len(counts.get("missing", set()))
+
+    print("Processed {} packages: updated {}, failed/skipped {},"
+          " missing {}".format(total, updated, failedskipped, missing))
+
+    if missing:
+        print("Missing packages:")
+        for item in counts["missing"]:
+            print("- {}".format(item))
 
 
 @contextmanager
@@ -386,7 +402,7 @@ def sync_from_unstable_project(parser, context, args):
     update_type = "feature"
 
     options = parser.parse_args(args)
-    results = Counter()
+    results = defaultdict(set)
 
     source_dir = _check_path(options.source)
     tarball_directory = _check_path(options.tarball_dir)
@@ -408,7 +424,7 @@ def sync_from_unstable_project(parser, context, args):
         if not corresponding.exists():
             print("Missing destination directory {}. Skipping.".format(
                 corresponding))
-            results.update(["missing"])
+            results["missing"].add(entry.name)
             continue
 
         destination_spec = corresponding / package_name
@@ -419,7 +435,7 @@ def sync_from_unstable_project(parser, context, args):
         if version == options.version_to:
             print("Package {} already updated, skipping.".format(
                 corresponding))
-            results.update(["failedskipped"])
+            results["failedskipped"].add(entry.name)
             continue
 
         # Remove everything locally
@@ -447,29 +463,23 @@ def sync_from_unstable_project(parser, context, args):
 
             result = update_package(corresponding, options.version_to,
                                     tarball_directory,
+                                    version_from=version,
                                     committer=context.committer,
                                     kind=options.kind, changetype=update_type,
                                     checkout_dir=checkout_dir,
                                     upstream_branch=options.stable_branch,
-                                    previous_patches=patches,
-                                    version_from=version)
+                                    previous_patches=patches)
             if result:
-                results.update(["updated"])
-
+                results["updated"].add(entry.name)
                 # Copy the updated .changes file to the unstable project
                 new_changes_file = corresponding / (corresponding.name +
                                                     ".changes")
                 old_changes_file = entry / (entry.name + ".changes")
-
                 shutil.copy(str(new_changes_file), str(old_changes_file))
             else:
-                results.update(["failedskipped"])
+                results["failedskipped"].add(entry.name)
 
-        results.update(["total"])
-
-    print("Processed {} packages: updated {}, failed/skipped {},"
-          " missing {}".format(results["total"], results["updated"],
-                               results["failedskipped"], results["missing"]))
+        _report_changes(results)
 
 
 @subcmd
@@ -491,7 +501,7 @@ def update_packages(parser, context, args):
 
     options = parser.parse_args(args)
 
-    results = Counter()
+    results = defaultdict(set)
 
     tarball_directory = _check_path(options.tarball_dir)
     checkout_dir = _check_path(options.checkout_dir)
@@ -513,13 +523,11 @@ def update_packages(parser, context, args):
                                     upstream_branch=options.stable_branch)
 
             if result:
-                results.update(["updated"])
+                results["updated"].add(entry.name)
             else:
-                results.update(["failedskipped"])
-        results.update(["total"])
+                results["failedskipped"].add(entry.name)
 
-    print("Processed {} packages: updated {}, failed/skipped {}".format(
-        results["total"], results["updated"], results["failedskipped"]))
+            _report_changes(results)
 
 
 def main():
