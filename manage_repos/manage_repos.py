@@ -16,9 +16,25 @@ from pyrpm.spec import Spec, replace_macros
 
 from trackchanges import *
 
-
 VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
+
+
+def _report_changes(counts):
+
+    total = sum(len(value) for value in counts.values())
+    updated = len(counts.get("updated", set()))
+    failedskipped = len(counts.get("failedskipped", set()))
+    missing = len(counts.get("missing", set()))
+
+    print("Processed {} packages: updated {}, failed/skipped {},"
+          " missing {}".format(total, updated, failedskipped, missing))
+
+    if missing:
+        print("Missing packages:")
+        for item in counts["missing"]:
+            print("- {}".format(item))
+
 
 # Spec file handling
 

@@ -48,22 +48,6 @@ def _add_patch_information(contents: list, patches: list, text: str=None):
         contents.append(CHANGES_ENTRY.format(subject=patch, bugs=""))
 
 
-def _report_changes(counts):
-
-    total = sum(len(value) for value in counts.values())
-    updated = len(counts.get("updated", set()))
-    failedskipped = len(counts.get("failedskipped", set()))
-    missing = len(counts.get("missing", set()))
-
-    print("Processed {} packages: updated {}, failed/skipped {},"
-          " missing {}".format(total, updated, failedskipped, missing))
-
-    if missing:
-        print("Missing packages:")
-        for item in counts["missing"]:
-            print("- {}".format(item))
-
-
 @contextmanager
 def cd(subpath):
     old_path = Path.cwd()
