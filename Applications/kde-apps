@@ -32,6 +32,7 @@ gwenview5
 incidenceeditor
 jovie
 juk
+k3b
 kaccessible
 kaccounts-integration
 kaccounts-providers
@@ -60,6 +61,7 @@ kcharselect
 kcolorchooser
 kcontacts
 kcron
+kdav
 kdebase4-runtime
 kdebugsettings
 kdesdk4-scripts
@@ -161,6 +163,7 @@ kturtle
 kwalletmanager5
 kwave
 kwordquiz
+libkgapi
 libgravatar
 libkcddb
 libkcompactdisc
