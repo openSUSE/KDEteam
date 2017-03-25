@@ -11,8 +11,6 @@ import tempfile
 import time
 from urllib.parse import urlparse
 
-from arghandler import ArgumentHandler, subcmd
-from pyrpm.spec import Spec, replace_macros
 from sarge import run, get_stdout, shell_format
 
 __all__ = ["record_changes", "cd"]
