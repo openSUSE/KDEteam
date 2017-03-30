@@ -29,15 +29,6 @@ CHANGES_TEMPLATE = """
 CHANGES_ENTRY = "  * {subject} {bugs}"
 
 
-def _check_path(path: str) -> Path:
-
-    if path is None:
-        return
-
-    path = Path(path).expanduser().absolute()
-    return path
-
-
 def _add_patch_information(contents: list, patches: list, text: str=None):
 
     if not patches or not contents:
@@ -113,7 +104,7 @@ def create_dummy_changes_entry(version_to: str, destination: str,
         for line in f:
             if f.isfirstline():
                 print(changes_entry)
-            print(line.strip())
+            print(line.rstrip())
 
 
 def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,

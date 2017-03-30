@@ -20,6 +20,15 @@ VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
 
 
+def _check_path(path: str) -> Path:
+
+    if path is None:
+        return
+
+    path = Path(path).expanduser().absolute()
+    return path
+
+
 def _report_changes(counts):
 
     total = sum(len(value) for value in counts.values())
@@ -51,7 +60,10 @@ def parse_spec(specfile: Path) -> (str, list, str):
         # URL in source: get the file name
         upstream_source = os.path.basename(urlparse(upstream_source).path)
 
-    upstream_source = upstream_source.replace("-%{version}.tar.xz", "")
+    # Some packages have extra characters after the version
+    upstream_source = re.sub(r"-%{version}[a-zA-Z0-9]{,}.tar.xz", "",
+                             upstream_source)
+
     # Expand things like %{name}
     # FIXME: Won't work for special oS macros
     upstream_source = replace_macros(upstream_source, specfile)
@@ -87,7 +99,7 @@ def update_package(entry: Path, version_to: str, tarball_directory: Path=None,
     current_version, patches, upstream_reponame = parse_spec(specfile)
 
     # This happens when copying packages from a different repository,
-    # the version may be behind, so if it's explicitly specified,
+    # the version may be different, so if it's explicitly specified,
     # we override the one in the spec
 
     current_version = current_version if version_from is None else version_from
@@ -159,9 +171,6 @@ def make_changes(parser, context, args):
     parser.add_argument("upstream_name", help="Upstream package name")
 
     options = parser.parse_args(args)
-    # We "cd" inside other directories, so make the path to outside ones
-    # absolute
-
     checkout_dir = _check_path(context.checkout_dir)
 
     record_changes(options.changes_file, checkout_dir,
@@ -294,7 +303,7 @@ def update_packages(parser, context, args):
     results = defaultdict(set)
 
     tarball_directory = _check_path(options.tarball_dir)
-    checkout_dir = _check_path(options.checkout_dir)
+    checkout_dir = _check_path(context.checkout_dir)
 
     for entry in Path(options.directory).iterdir():
 
