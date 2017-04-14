@@ -78,7 +78,13 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
 
         bug_content_cmd = "git show {}".format(commit)
 
-        bug_content = get_stdout(bug_content_cmd).splitlines()
+        try:
+            bug_content = get_stdout(bug_content_cmd).splitlines()
+        except UnicodeDecodeError:
+            print("Commit {} has invalid UTF-8 content, skipping".format(
+                commit))
+            continue
+
         # Split BUG: keywords and keep only the number, replace them
         # with "kde#NNNN"
         bug_content = ["kde#{}".format(line.split(":")[1])
