@@ -29,7 +29,7 @@ def _check_path(path: str) -> Path:
     return path
 
 
-def _report_changes(counts):
+def _report_changes(counts: Counter) -> None:
 
     total = sum(len(value) for value in counts.values())
     updated = len(counts.get("updated", set()))
@@ -44,6 +44,44 @@ def _report_changes(counts):
         for item in counts["missing"]:
             print("- {}".format(item))
 
+
+def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
+                   package_name: str) -> bool:
+
+    done_subdir = tarball_directory / "done"
+
+    if not done_subdir.exists():
+        done_subdir.mkdir()
+
+    tars = list(tarball_directory.glob(tarball_pattern))
+
+    if not tars:
+        print("No tarballs found for {}, skipping.".format(package_name))
+        return False
+
+    tar_names = {item.name for item in tars}
+
+    if all((entry / tarball.name).exists for tarball in tars):
+        print("All tarballs for {} already copied, skipping.".format(
+            package_name))
+        return False
+
+    # Clean up old tars before copying
+    for oldtarball in entry.glob("*.tar.xz"):
+        if oldtarball.name in tar_names:
+            continue
+        oldtarball.unlink()
+
+    del tar_names
+
+    for tarball in tars:
+        destination_path = entry / tarball.name
+        if destination_path.exists():
+            print("Tarball {} already copied, skipping".format(
+                tarball.name))
+            shutil.copy(str(tarball), str(destination_path))
+
+    return True
 
 # Spec file handling
 
@@ -84,10 +122,15 @@ def update_version(specfile: str, version_to: str) -> None:
             print(line)
 
 
-def update_package(entry: Path, version_to: str, tarball_directory: Path=None,
-                   *, version_from: str=None, committer: str=None,
-                   kind: str="applications", changetype: str="bugfix",
-                   checkout_dir: Path=None, upstream_branch: str=None,
+def update_package(entry: Path, version_to: str,
+                   tarball_directory: Path=None,
+                   *,
+                   version_from: str=None,
+                   committer: str=None,
+                   kind: str="applications",
+                   changetype: str="bugfix",
+                   checkout_dir: Path=None,
+                   upstream_branch: str=None,
                    previous_patches: list=None) -> bool:
 
     package_name = entry.name
@@ -111,38 +154,25 @@ def update_package(entry: Path, version_to: str, tarball_directory: Path=None,
 
     print("Updating package {}".format(package_name))
 
-    tarball_name = "{name}-{version_to}.tar.xz".format(name=upstream_reponame,
-                                                       version_to=version_to)
+    tarball_template = "{name}-*{version}.tar.xz"
 
+    tarball_pattern = tarball_template.format(name=upstream_reponame,
+                                              version=version_to)
     update_version(specfile, version_to)
 
     if tarball_directory is not None and tarball_directory.exists():
-        done_subdir = tarball_directory / "done"
-        done_subdir.mkdir(exist_ok=True)
-
-        if (done_subdir / tarball_name).exists():
-            print("Tarball {} already processed, skipping".format(
-                tarball_name))
+        result = _copy_tarballs(entry, tarball_directory, tarball_directory,
+                                package_name)
+        if not result:
             return False
-
-        tarball_path = tarball_directory / tarball_name
-        destination_path = entry / tarball_name
-
-        if not tarball_path.exists():
-            print("Tarball {} missing, skipping".format(tarball_name))
-            return False
-
-        shutil.copy(str(tarball_path), str(destination_path))
-        tarball_path.rename(done_subdir / tarball_name)
-
-    elif not (entry / tarball_name).exists():
+    else:
         # Try to download the tarball if not present
-        print("No tarball found. Attempting download...")
+        print("No tarball(s) found. Attempting download...")
         cmd = ["osc", "service", "localrun", "download_files"]
         result = run(cmd)
         if result.returncode != 0:
             print("Download of {} failed. Skipping package.".format(
-                tarball_name))
+                package_name))
             return False
 
     record_changes(changes_file, checkout_dir, current_version,
@@ -152,7 +182,7 @@ def update_package(entry: Path, version_to: str, tarball_directory: Path=None,
                    current_patches=patches)
 
     if Path("pre_checkin.sh").exists():
-        run("pre_checkin.sh", shell=True)
+        run("sh ./pre_checkin.sh", shell=True)
 
     return True
 
@@ -167,15 +197,19 @@ def make_changes(parser, context, args):
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
-    parser.add_argument("changes_file", help="Changes file to update")
-    parser.add_argument("upstream_name", help="Upstream package name")
+    parser.add_argument("spec_file", help="Changes file to update")
 
     options = parser.parse_args(args)
     checkout_dir = _check_path(context.checkout_dir)
+    _, _, upstream_reponame = parse_spec(
+        options.spec_file)
 
-    record_changes(options.changes_file, checkout_dir,
+    changes_file = str(Path(
+        options.spec_file).with_suffix(".changes").absolute())
+
+    record_changes(changes_file, checkout_dir,
                    options.version_from, options.version_to,
-                   upstream_reponame=options.upstream_name,
+                   upstream_reponame=upstream_reponame,
                    committer=context.committer, branch=None)
 
 
