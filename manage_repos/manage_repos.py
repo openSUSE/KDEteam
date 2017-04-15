@@ -61,7 +61,7 @@ def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
 
     tar_names = {item.name for item in tars}
 
-    if all((entry / tarball.name).exists for tarball in tars):
+    if all((entry / tarball.name).exists() for tarball in tars):
         print("All tarballs for {} already copied, skipping.".format(
             package_name))
         return False
@@ -79,7 +79,7 @@ def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
         if destination_path.exists():
             print("Tarball {} already copied, skipping".format(
                 tarball.name))
-            shutil.copy(str(tarball), str(destination_path))
+        shutil.copy(str(tarball), str(destination_path))
 
     return True
 
@@ -161,7 +161,7 @@ def update_package(entry: Path, version_to: str,
     update_version(specfile, version_to)
 
     if tarball_directory is not None and tarball_directory.exists():
-        result = _copy_tarballs(entry, tarball_directory, tarball_directory,
+        result = _copy_tarballs(entry, tarball_directory, tarball_pattern,
                                 package_name)
         if not result:
             return False
