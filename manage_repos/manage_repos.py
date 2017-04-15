@@ -29,7 +29,7 @@ def _check_path(path: str) -> Path:
     return path
 
 
-def _report_changes(counts: Counter) -> None:
+def _report_changes(counts: dict) -> None:
 
     total = sum(len(value) for value in counts.values())
     updated = len(counts.get("updated", set()))
