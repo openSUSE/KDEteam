@@ -53,10 +53,10 @@ def cd(subpath):
 
 def format_log_entries(commit_from: str, commit_to: str) -> str:
 
+    assert commit_to is not None
+
     all_commits_cmd = ["git", "log", "--pretty=format:%H", "--no-merges",
                        "{}..{}".format(commit_from, commit_to)]
-
-    # Catch the output and decode it (check_output returns bytes)
 
     all_commits = get_stdout(all_commits_cmd).splitlines()
 
@@ -78,6 +78,7 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
 
         bug_content_cmd = "git show {}".format(commit)
 
+        # Binary diffs may cause the output to choke, so skip them
         try:
             bug_content = get_stdout(bug_content_cmd).splitlines()
         except UnicodeDecodeError:
@@ -182,7 +183,10 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
                    committer: str=None, branch: str=None,
                    **kwargs) -> None:
 
-    package_name = changes_file.replace(".changes", "")
+    # Strip path name
+    package_name = Path(changes_file.replace(".changes", "")).name
+    package_name = str(package_name)
+
     commit_from = "v{}".format(version_from)
     commit_to = "v{}".format(version_to)
 
@@ -202,6 +206,11 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
         return
 
     with cd(upstream_repo_path):
+
+        # Switch to the branch to get up to date information
+        if branch is not None or branch != "master":
+            branch = "KDE/4.14" if package_name == "kdelibs4" else branch
+            cmd = run(["git", "checkout", branch])
 
         if not upstream_tag_available(commit_to):
 
