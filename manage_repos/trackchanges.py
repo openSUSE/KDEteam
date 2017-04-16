@@ -76,20 +76,15 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
         if "GIT_SILENT" in subject or "SVN_SILENT" in subject:
             continue
 
-        bug_content_cmd = "git show {}".format(commit)
-
-        # Binary diffs may cause the output to choke, so skip them
-        try:
-            bug_content = get_stdout(bug_content_cmd).splitlines()
-        except UnicodeDecodeError:
-            print("Commit {} has invalid UTF-8 content, skipping".format(
-                commit))
-            continue
+        bug_content_cmd = "git show -s {}".format(commit)
+        bug_content = get_stdout(bug_content_cmd).splitlines()
+        bug_content = [line.strip() for line in bug_content if line.strip()]
 
         # Split BUG: keywords and keep only the number, replace them
         # with "kde#NNNN"
-        bug_content = ["kde#{}".format(line.split(":")[1])
-                       for line in bug_content if line.startswith("BUG:")]
+        bug_content = ["kde#{}".format(line.split(":")[1].strip())
+                       for line in bug_content
+                       if line.startswith("BUG:")]
         # Empty string if no entries, else join all bugs and wrap in ()
         bug_content = "" if not bug_content else "({})".format(
             ", ".join(bug_content))
@@ -208,7 +203,7 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
     with cd(upstream_repo_path):
 
         # Switch to the branch to get up to date information
-        if branch is not None or branch != "master":
+        if branch is not None and branch != "master":
             branch = "KDE/4.14" if package_name == "kdelibs4" else branch
             cmd = run(["git", "checkout", branch])
 
