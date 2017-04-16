@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from configparser import ConfigParser
 from contextlib import contextmanager
 from collections import defaultdict
 import fileinput
@@ -7,12 +8,14 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sys
 import tempfile
 import time
 from urllib.parse import urlparse
 
 from arghandler import ArgumentHandler, subcmd
 from pyrpm.spec import Spec, replace_macros
+from sarge import run
 
 from trackchanges import *
 
@@ -25,8 +28,40 @@ def _check_path(path: str) -> Path:
     if path is None:
         return
 
-    path = Path(path).expanduser().absolute()
+    if sys.version_info.minor > 4:
+        path = Path(path).expanduser().absolute()
+    else:
+        path = Path(path).absolute()
     return path
+
+
+def _read_config() -> (str, str):
+
+    filename = Path.home() / ".config" / "kdeteam_repo.cfg"
+
+    if not filename.exists():
+        return None, None
+
+    filename = str(filename)
+    config = ConfigParser()
+    config.read(filename)
+    committer = config["default"]["committer"]
+    checkout_dir = config["default"]["checkout_dir"]
+
+    return committer, checkout_dir
+
+
+def _get_committer_and_tarball_dir(context, parser):
+
+    committer, checkout_dir = _read_config()
+
+    if committer is None and context.committer is None:
+        parser.error("You must specify one committer")
+
+    checkout_dir = (context.checkout_dir if context.checkout_dir
+                    is not None else checkout_dir)
+
+    return committer, checkout_dir
 
 
 def _report_changes(counts: dict) -> None:
@@ -59,7 +94,7 @@ def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
         print("No tarballs found for {}, skipping.".format(package_name))
         return False
 
-    tar_names = {item.name for item in tars}
+    tar_names = {item.name for item in tars if item}
 
     if all((entry / tarball.name).exists() for tarball in tars):
         print("All tarballs for {} already copied, skipping.".format(
@@ -79,7 +114,10 @@ def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
         if destination_path.exists():
             print("Tarball {} already copied, skipping".format(
                 tarball.name))
+            shutil.move(str(tarball), str(done_subdir / tarball.name))
+            continue
         shutil.copy(str(tarball), str(destination_path))
+        shutil.move(str(tarball), str(done_subdir / tarball.name))
 
     return True
 
@@ -156,8 +194,12 @@ def update_package(entry: Path, version_to: str,
 
     tarball_template = "{name}-*{version}.tar.xz"
 
-    tarball_pattern = tarball_template.format(name=upstream_reponame,
-                                              version=version_to)
+    if package_name != "kdelibs4":
+        tarball_pattern = tarball_template.format(name=upstream_reponame,
+                                                  version=version_to)
+    else:
+        tarball_pattern = tarball_template.format(name=upstream_reponame,
+                                                  version="4.14.*")
     update_version(specfile, version_to)
 
     if tarball_directory is not None and tarball_directory.exists():
@@ -179,7 +221,7 @@ def update_package(entry: Path, version_to: str,
                    version_to, upstream_reponame=upstream_reponame,
                    changetype=changetype, kind=kind, committer=committer,
                    previous_patches=previous_patches,
-                   current_patches=patches)
+                   current_patches=patches, branch=upstream_branch)
 
     if Path("pre_checkin.sh").exists():
         run("sh ./pre_checkin.sh", shell=True)
@@ -200,6 +242,8 @@ def make_changes(parser, context, args):
     parser.add_argument("spec_file", help="Changes file to update")
 
     options = parser.parse_args(args)
+    committer, checkout_dir = _get_committer_and_tarball_dir(context,
+                                                             parser)
     checkout_dir = _check_path(context.checkout_dir)
     _, _, upstream_reponame = parse_spec(
         options.spec_file)
@@ -210,7 +254,7 @@ def make_changes(parser, context, args):
     record_changes(changes_file, checkout_dir,
                    options.version_from, options.version_to,
                    upstream_reponame=upstream_reponame,
-                   committer=context.committer, branch=None)
+                   committer=committer, branch=None)
 
 
 @subcmd
@@ -235,11 +279,13 @@ def sync_from_unstable_project(parser, context, args):
     update_type = "feature"
 
     options = parser.parse_args(args)
+    committer, checkout_dir = _get_committer_and_tarball_dir(context,
+                                                             parser)
     results = defaultdict(set)
 
     source_dir = _check_path(options.source)
     tarball_directory = _check_path(options.tarball_dir)
-    checkout_dir = _check_path(context.checkout_dir)
+    checkout_dir = _check_path(checkout_dir)
     destination_dir = _check_path(options.destination)
 
     print("Source (unstable) dir: {}".format(source_dir))
@@ -297,7 +343,7 @@ def sync_from_unstable_project(parser, context, args):
             result = update_package(corresponding, options.version_to,
                                     tarball_directory,
                                     version_from=version,
-                                    committer=context.committer,
+                                    committer=committer,
                                     kind=options.kind, changetype=update_type,
                                     checkout_dir=checkout_dir,
                                     upstream_branch=options.stable_branch,
@@ -312,7 +358,7 @@ def sync_from_unstable_project(parser, context, args):
             else:
                 results["failedskipped"].add(entry.name)
 
-        _report_changes(results)
+    _report_changes(results)
 
 
 @subcmd
@@ -333,11 +379,13 @@ def update_packages(parser, context, args):
     parser.add_argument("directory", help="Directory with the OBS checkout")
 
     options = parser.parse_args(args)
+    committer, checkout_dir = _get_committer_and_tarball_dir(context,
+                                                             parser)
 
     results = defaultdict(set)
 
     tarball_directory = _check_path(options.tarball_dir)
-    checkout_dir = _check_path(context.checkout_dir)
+    checkout_dir = _check_path(checkout_dir)
 
     for entry in Path(options.directory).iterdir():
 
@@ -350,7 +398,7 @@ def update_packages(parser, context, args):
 
             result = update_package(entry, options.version_to,
                                     tarball_directory,
-                                    committer=context.committer,
+                                    committer=committer,
                                     kind=options.kind, changetype=options.type,
                                     checkout_dir=checkout_dir,
                                     upstream_branch=options.stable_branch)
@@ -368,7 +416,7 @@ def main():
     handler = ArgumentHandler()
 
     # Global parameters
-    handler.add_argument("-e", "--committer", required=True,
+    handler.add_argument("-e", "--committer",
                          help="Email address of the committer")
     handler.add_argument("-s", "--checkout-dir",
                          help="Directory containing source checkouts")
