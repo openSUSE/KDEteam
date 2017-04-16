@@ -88,6 +88,9 @@ def _copy_tarballs(entry: Path, tarball_directory: Path, tarball_pattern: str,
     if not done_subdir.exists():
         done_subdir.mkdir()
 
+    # FIXME: Currently this is too broad, and catches things like
+    # akonadi-calendar and akonadi-calendar-tools, or
+    # kactivities and kactivities-stats
     tars = list(tarball_directory.glob(tarball_pattern))
 
     if not tars:
@@ -144,6 +147,10 @@ def parse_spec(specfile: Path) -> (str, list, str):
     # FIXME: Won't work for special oS macros
     upstream_source = replace_macros(upstream_source, specfile)
 
+    # Workaround a quirk with the parser
+    if "kde-l10n" in upstream_source:
+        upstream_source = "kde-l10n"
+
     patches = list() if not hasattr(specfile, "patches") else specfile.patches
 
     return version, patches, upstream_source
@@ -184,10 +191,11 @@ def update_package(entry: Path, version_to: str,
     # we override the one in the spec
 
     current_version = current_version if version_from is None else version_from
+    specfile = specfile if upstream_reponame != "kde-l10n" else specfile + ".in"
 
     if current_version == version_to:
-        print("Package {} is already at the latest version {}"
-              ". Skipping.".format(package_name, current_version))
+        print("Package {} is already at the latest version {}."
+              "Skipping.".format(package_name, current_version))
         return False
 
     print("Updating package {}".format(package_name))
@@ -239,12 +247,15 @@ def make_changes(parser, context, args):
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
+    parser.add_argument("-b", "--stable-branch",
+                        help="Use information from this branch"
+                        " if a tag is not available")
     parser.add_argument("spec_file", help="Changes file to update")
 
     options = parser.parse_args(args)
     committer, checkout_dir = _get_committer_and_tarball_dir(context,
                                                              parser)
-    checkout_dir = _check_path(context.checkout_dir)
+    checkout_dir = _check_path(checkout_dir)
     _, _, upstream_reponame = parse_spec(
         options.spec_file)
 
@@ -254,7 +265,7 @@ def make_changes(parser, context, args):
     record_changes(changes_file, checkout_dir,
                    options.version_from, options.version_to,
                    upstream_reponame=upstream_reponame,
-                   committer=committer, branch=None)
+                   committer=committer, branch=options.stable_branch)
 
 
 @subcmd
