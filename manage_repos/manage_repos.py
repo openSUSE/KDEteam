@@ -37,6 +37,9 @@ def _check_path(path: str) -> Path:
 
 def _read_config() -> (str, str):
 
+    # TODO: Actually carry a config object around and use that instead of
+    # loads and loads of parameters
+
     filename = Path.home() / ".config" / "kdeteam_repo.cfg"
 
     if not filename.exists():
