@@ -211,7 +211,6 @@ def update_package(entry: Path, version_to: str,
     else:
         tarball_pattern = tarball_template.format(name=upstream_reponame,
                                                   version="4.14.*")
-    update_version(specfile, version_to)
 
     if tarball_directory is not None and tarball_directory.exists():
         result = _copy_tarballs(entry, tarball_directory, tarball_pattern,
@@ -227,6 +226,8 @@ def update_package(entry: Path, version_to: str,
             print("Download of {} failed. Skipping package.".format(
                 package_name))
             return False
+
+    update_version(specfile, version_to)
 
     record_changes(changes_file, checkout_dir, current_version,
                    version_to, upstream_reponame=upstream_reponame,
