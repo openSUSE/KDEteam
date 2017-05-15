@@ -53,17 +53,23 @@ echo "  * New $type release"
 echo "  * For more details please see:"
 echo "  * https://www.kde.org/announcements/plasma-$4.php"
 commits=$(git log --pretty=format:%H --no-merges $commit_from...$commit_to)
-if [ "$(echo -- "$commits" | wc -l)" -gt 30 ]; then
-    changes="- Too many changes to list here"
+
+if [ "$(echo -- "$commits" | wc -l)" -gt 100 ]; then
+    echo "- Too many changes to list here"
 else
     for i in $commits; do
         changes="${changes}$(entryForCommit "$i")"
     done
 
-    echo "- Changes since $version_from:"
-    if [ -z "$changes" ]; then
-        changes="  * None"
+    if [ "$(echo -e -- "$changes" | wc -l)" -gt 30 ]; then
+        echo "- Too many changes to list here"
+    else
+        echo "- Changes since $version_from:"
+        if [ -z "$changes" ]; then
+            changes="  * None\n"
+        fi
+
+        echo -ne "${changes}"
     fi
 fi
-echo -e "$changes"
 echo ""
