@@ -21,7 +21,7 @@ from trackchanges import *
 
 VERSION_RE = re.compile(r"(^Version:\s+).*")
 PATCH_RE = re.compile("(^Patch[0-9]{1,}:\s+).*")
-
+EXTRA_RE = re.compile(r"(^%define _tar_path\s+).*")
 
 def _check_path(path: str) -> Path:
 
@@ -166,6 +166,10 @@ def update_version(specfile: str, version_to: str) -> None:
             line = line.rstrip()
             if VERSION_RE.match(line):
                 line = VERSION_RE.sub(r"\g<1>" + version_to, line)
+            if EXTRA_RE.match(line):
+                # It's 1.2 rather than 1.2.3, strip last part
+                version_path = re.sub(r"\.[0-9]{1,}$", "", version_to)
+                line = EXTRA_RE.sub(r"\g<1>" + version_path, line)
             # TODO: Do the same for patches
             print(line)
 
