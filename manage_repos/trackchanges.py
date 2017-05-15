@@ -42,11 +42,11 @@ def _add_patch_information(contents: list, patches: list, text: str=None):
 @contextmanager
 def cd(subpath):
     old_path = Path.cwd()
-    os.chdir(old_path / subpath)
+    os.chdir(str(old_path / subpath))
     try:
         yield
     finally:
-        os.chdir(old_path)
+        os.chdir(str(old_path))
 
 # Changelog handling
 
