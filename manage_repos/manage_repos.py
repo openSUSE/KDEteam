@@ -207,7 +207,10 @@ def update_package(entry: Path, version_to: str,
 
     print("Updating package {}".format(package_name))
 
-    tarball_template = "{name}-*{version}.tar.xz"
+    if package_name == "kde-l10n":
+        tarball_template = "{name}-*{version}.tar.xz"
+    else:
+        tarball_template = "{name}-{version}.tar.xz"
 
     if package_name != "kdelibs4":
         tarball_pattern = tarball_template.format(name=upstream_reponame,
@@ -255,6 +258,9 @@ def make_changes(parser, context, args):
     parser.add_argument("-t", "--type", choices=("bugfix", "feature"),
                         help="Type of release (bugfix or feature)",
                         default="bugfix")
+    parser.add_argument("-k", "--kind", default="applications",
+                        choices=("plasma", "frameworks", "applications",
+                                 "other"))
     parser.add_argument("-b", "--stable-branch",
                         help="Use information from this branch"
                         " if a tag is not available")
@@ -273,7 +279,8 @@ def make_changes(parser, context, args):
     record_changes(changes_file, checkout_dir,
                    options.version_from, options.version_to,
                    upstream_reponame=upstream_reponame,
-                   committer=committer, branch=options.stable_branch)
+                   committer=committer, branch=options.stable_branch,
+                   kind=options.kind)
 
 
 @subcmd
