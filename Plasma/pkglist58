@@ -27,7 +27,7 @@ oxygen5
 pam_kwallet
 plasma5-addons
 plasma5-desktop
-plasma5-integration
+plasma5-integration-5.8
 plasma5-pa
 plasma5-sdk
 plasma5-session
@@ -39,5 +39,3 @@ powerdevil5
 systemsettings5
 grub2-theme-breeze
 plasma5-openSUSE
-xdg-desktop-portal-kde
-plymouth-kcm
