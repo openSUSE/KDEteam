@@ -10,12 +10,12 @@ kapidox
 karchive
 kauth
 kbookmarks
-kcoreaddons
 kcmutils
 kcodecs
 kcompletion
 kconfig
 kconfigwidgets
+kcoreaddons
 kcrash
 kdbusaddons
 kdeclarative
@@ -43,8 +43,8 @@ kjobwidgets
 kjs
 kjsembed
 kmediaplayer
-knotifications
 knewstuff
+knotifications
 knotifyconfig
 kpackage
 kparts
@@ -54,8 +54,8 @@ kpty
 kross
 krunner
 kservice
-ktextwidgets
 ktexteditor
+ktextwidgets
 kunitconversion
 kwallet
 kwayland
@@ -67,8 +67,9 @@ libKF5ModemManagerQt
 libKF5NetworkManagerQt
 oxygen5-icon-theme
 plasma-framework
+prison-qt5
+qqc2-style
 solid
 sonnet
-threadweaver
 syntax-highlighting
-prison-qt5
+threadweaver
