@@ -399,6 +399,7 @@ def update_packages(parser, context, args):
     parser.add_argument("--tarball-dir",
                         help="Directory containing source tarballs")
     parser.add_argument("--version-to", help="New version to update to")
+    parser.add_argument("--version-from", help="New version to update from (optional)")
     parser.add_argument("-k", "--kind", default="applications",
                         choices=("plasma", "frameworks", "applications",
                                  "other"))
@@ -424,6 +425,7 @@ def update_packages(parser, context, args):
 
             result = update_package(entry, options.version_to,
                                     tarball_directory,
+                                    version_from=options.version_from,
                                     committer=committer,
                                     kind=options.kind, changetype=options.type,
                                     checkout_dir=checkout_dir,
