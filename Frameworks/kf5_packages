@@ -30,6 +30,7 @@ kemoticons
 kfilemetadata5
 kglobalaccel
 kguiaddons
+kholidays
 khtml
 ki18n
 kiconthemes
@@ -68,6 +69,7 @@ libKF5ModemManagerQt
 libKF5NetworkManagerQt
 oxygen5-icon-theme
 plasma-framework
+purpose
 prison-qt5
 qqc2-desktop-style
 solid
