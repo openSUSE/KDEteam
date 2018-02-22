@@ -3,26 +3,31 @@
 # Attention: Reads and overwrites /tmp/change{,s}
 
 # Version number
-version_from="5.9.2"
-version_to="5.9.3"
+version_from="5.12.0"
+version_to="5.12.1"
 # Git refs
-commit_from="v5.9.2"
-commit_to="v5.9.3"
+commit_from="v5.12.0"
+commit_to="origin/Plasma/5.12"
 # Type of update, either "bugfix" or "feature"
 type="bugfix"
 # Location of plasma repo checkouts (need to be fresh)
-repo_location="/home/fabian/plasma"
+repo_location="/home/fabian/kderepos"
 # Location of downloaded tars. Will be used if available
-tar_location="/home/fabian/plasma/tars"
+tar_location="/home/fabian/plasmatars"
 # If empty, URL will be stripped from source
 tar_url="http://download.kde.org/stable/plasma/%{version}/"
 
 script_dir=$(realpath "$(dirname "$0")")
 
-for i in *; do
+pkgs="$@"
+if [ "$pkgs" = "" ]; then
+    pkgs="*"
+fi
+
+for i in $pkgs; do
     echo "Updating $i:"
     cd $i
-    sed -i "s/$version_from/$version_to/g" *.spec
+    sed -i "s/${version_from//\./\\.}/$version_to/g" *.spec
     echo -e "\tSpecfile updated"
     reponame=$(echo *.tar.xz | sed "s/-5.*//")
     if [ ! -d "$repo_location/$reponame" ]; then
@@ -48,7 +53,7 @@ for i in *; do
     else
         echo -e "\tTrying to download"
         osc service localrun download_files >/dev/null 2>&1
-        if [[ -n "*.tar.xz" ]]; then
+        if [[ -e "*.tar.xz" ]]; then
             echo -e "\t\tDone"
         else
             echo -e "\t\tFailed"
