@@ -3,9 +3,9 @@
 # Attention: Reads and overwrites /tmp/change{,s}
 
 # Version number
-version_from="5.10.0"
-version_to="5.11.0-alpha"
-minor_from="5.10"
+version_from="5.11.0-alpha"
+version_to="5.11.0-beta1"
+minor_from="5.11"
 minor_to="5.11"
 # "development_releases" or "official_releases"
 release_dir="development_releases"
@@ -31,7 +31,7 @@ for i in $pkgs; do
     sed -i "s/^Version:.*$/Version:        ${rpm_version}/g" *.spec
     sed -i "s/^%define real_version .*$/%define real_version ${real_version}/g" *.spec
     sed -i "s/^%define so_version .*$/%define so_version ${so_version}/g" *.spec
-    sed -i "s/^%define tar_version \(.*\)-[0-9.]*$/%define tar_version \\1-${real_version}/g" *.spec
+    sed -i "s/^%define tar_version \(.*-src\)-.*$/%define tar_version \\1-${real_version}/g" *.spec
     sed -i "s#/${minor_from}/#/${minor_to}/#g" *.spec
     sed -i "s#/[^/]*_releases/#/${release_dir}/#g" *.spec
 
