@@ -39,6 +39,7 @@ kaccounts-providers
 kaddressbook
 kajongg
 kalarm
+kamoso
 kalarmcal
 kalgebra
 kalzium
@@ -49,6 +50,7 @@ kapptemplate
 kate
 katomic
 kblackbox
+kbackup
 kblocks
 kblog
 kbounce
@@ -139,6 +141,7 @@ ksaneplugin
 kscd
 kshisen
 ksquares
+ksudoku
 kstars
 ksystemlog
 kteatime
@@ -187,7 +190,6 @@ mbox-importer
 messagelib
 minuet
 mobipocket
-okteta
 okular
 parley
 picmi
