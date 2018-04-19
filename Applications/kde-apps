@@ -39,26 +39,26 @@ kaccounts-providers
 kaddressbook
 kajongg
 kalarm
-kamoso
 kalarmcal
 kalgebra
 kalzium
 kamera
+kamoso
 kanagram
 kapman
 kapptemplate
 kate
 katomic
-kblackbox
 kbackup
+kblackbox
 kblocks
 kblog
 kbounce
 kbreakout
 kbruch
+kcachegrind
 kcalc
 kcalcore
-kcachegrind
 kcalutils
 kcharselect
 kcolorchooser
@@ -67,7 +67,6 @@ kcron
 kdav
 kdebase4-runtime
 kdebugsettings
-kdesdk4-scripts
 kde-dev-utils
 kdeedu-data
 kdegraphics-thumbnailers
@@ -77,6 +76,7 @@ kdepim-addons
 kdepim-apps-libs
 kdepim-runtime
 kde-print-manager
+kdesdk4-scripts
 kdesdk-thumbnailers
 kdf
 kdialog
@@ -141,8 +141,8 @@ ksaneplugin
 kscd
 kshisen
 ksquares
-ksudoku
 kstars
+ksudoku
 ksystemlog
 kteatime
 ktimer
@@ -165,7 +165,6 @@ kturtle
 kwalletmanager5
 kwave
 kwordquiz
-libkgapi
 libgravatar
 libkcddb
 libkcompactdisc
@@ -175,6 +174,7 @@ libkdepim
 libkeduvocdocument
 libkexiv2
 libkface
+libkgapi
 libkgeomap
 libkipi
 libkleo
@@ -203,3 +203,4 @@ spectacle
 step
 svgpart
 syndication
+umbrello
