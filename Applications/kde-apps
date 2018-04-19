@@ -36,18 +36,18 @@ kaccounts-providers
 kaddressbook
 kajongg
 kalarm
-kamoso
 kalarmcal
 kalgebra
 kalzium
 kamera
+kamoso
 kanagram
 kapman
 kapptemplate
 kate
 katomic
-kblackbox
 kbackup
+kblackbox
 kblocks
 kblog
 kbounce
@@ -79,6 +79,7 @@ kdialog
 kdiamond
 kdnssd
 keditbookmarks
+kfilereplace
 kfind
 kfloppy
 kfourinline
@@ -126,6 +127,7 @@ konquest
 konsole
 kontact
 kontactinterface
+kopete
 korganizer
 kpat
 kpimtextedit
@@ -142,7 +144,7 @@ kspaceduel
 ksquares
 kmousetool
 kmag
-ksudouku
+ksudoku
 ksmtp
 ksystemlog
 kteatime
@@ -155,6 +157,7 @@ kubrick
 kwalletmanager5
 kwave
 kwordquiz
+libkgapi
 libgravatar
 libkcddb
 libkcompactdisc
@@ -163,6 +166,7 @@ libkdegames
 libkdepim
 libkeduvocdocument
 libkexiv2
+libkgapi
 libkgapi
 libkgeomap
 libkipi
