@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 import time
+from datetime import datetime
 from urllib.parse import urlparse
 
 from sarge import run, get_stdout, shell_format
@@ -99,7 +100,7 @@ def create_dummy_changes_entry(version_to: str, destination: str,
                                kind: str, committer: str) -> None:
 
     contents = "  * Update to {}".format(version_to)
-    date = time.strftime("%a %b %d %H:%M:%S %Z %Y")
+    date = datetime.utcnow().strftime("%a %b %d %H:%M:%S UTC %Y")
     changes_entry = CHANGES_TEMPLATE.format(date=date, contents=contents,
                                             committer=committer)
     with fileinput.input(destination, inplace=True) as f:
@@ -160,7 +161,7 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
         _add_patch_information(contents, added_patches, "- Removed patches:")
 
     contents = "\n".join(contents)
-    date = time.strftime("%a %b %d %H:%M:%S %Z %Y")
+    date = datetime.utcnow().strftime("%a %b %d %H:%M:%S UTC %Y")
     changes_entry = CHANGES_TEMPLATE.lstrip()
     changes_entry = changes_entry.format(date=date, contents=contents,
                                          committer=committer)
