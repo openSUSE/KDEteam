@@ -52,7 +52,7 @@ def cd(subpath):
 # Changelog handling
 
 
-def format_log_entries(commit_from: str, commit_to: str) -> str:
+def format_log_entries(commit_from: str, commit_to: str, version_from: str) -> str:
 
     assert commit_to is not None
 
@@ -62,7 +62,7 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
     all_commits = get_stdout(all_commits_cmd).splitlines()
 
     if not all_commits:
-        yield "  * None"
+        yield "   * No code changes since {}".format(version_from)
         return
 
     if len(all_commits) > 30:
@@ -75,6 +75,11 @@ def format_log_entries(commit_from: str, commit_to: str) -> str:
         subject = get_stdout(subject_cmd).strip()
 
         if "GIT_SILENT" in subject or "SVN_SILENT" in subject:
+            continue
+
+        # Get rid of non-informative commits like "Fix" and "improve it"
+
+        if len(subject) < 10:
             continue
 
         bug_content_cmd = "git show -s {}".format(commit)
@@ -129,11 +134,11 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
 
     commit_data = list()
 
-    for entry in format_log_entries(commit_from, commit_to):
+    for entry in format_log_entries(commit_from, commit_to, version_from):
         commit_data.append(entry)
 
     if not commit_data:
-        contents.append("  * None")
+        contents.append("  * No code changes since {}".format(version_from))
     else:
         contents.extend(commit_data)
 
