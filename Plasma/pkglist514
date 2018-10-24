@@ -3,6 +3,7 @@ breeze
 breeze-gtk
 plymouth-theme-breeze
 discover
+drkonqi5
 kactivitymanagerd
 kcm_sddm
 kde-cli-tools5
@@ -30,7 +31,7 @@ plasma5-desktop
 plasma5-integration
 plasma5-pa
 plasma5-sdk
-plasma5-session
+plasma-vault
 plasma5-workspace
 plasma5-workspace-wallpapers
 plasma-nm5
@@ -41,3 +42,4 @@ grub2-theme-breeze
 plasma5-openSUSE
 xdg-desktop-portal-kde
 plymouth-kcm
+plasma-browser-integration
