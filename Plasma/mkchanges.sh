@@ -1,7 +1,7 @@
 #!/bin/bash
 if [[ $# -eq 1 ]]; then
     echo "-------------------------------------------------------------------"
-    LANG=C date | tr -d '\n'
+    LANG=C TZ=UTC date | tr -d '\n'
     echo -e " - fabian@ritter-vogt.de\n"
     echo "- Update to $1"
     echo ""
@@ -46,7 +46,7 @@ function entryForCommit {
 }
 
 echo "-------------------------------------------------------------------"
-LANG=C date | tr -d '\n'
+LANG=C TZ=UTC date | tr -d '\n'
 echo -e " - fabian@ritter-vogt.de\n"
 echo "- Update to $version_to"
 echo "  * New $type release"
@@ -63,13 +63,11 @@ else
 
     if [ "$(echo -e -- "$changes" | wc -l)" -gt 30 ]; then
         echo "- Too many changes to list here"
+    elif [ -z "$changes" ]; then
+        echo "- No code changes since $version_from"
     else
         echo "- Changes since $version_from:"
-        if [ -z "$changes" ]; then
-            changes="  * None\n"
-        fi
-
-        echo -ne "${changes}"
+        echo -ne "${changes}" | uniq
     fi
 fi
 echo ""
