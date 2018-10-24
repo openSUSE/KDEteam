@@ -1,7 +1,7 @@
 #!/bin/bash
 if [[ $# -eq 1 ]]; then
     echo "-------------------------------------------------------------------"
-    LANG=C date | tr -d '\n'
+    LANG=C TZ=UTC date | tr -d '\n'
     echo -e " - fabian@ritter-vogt.de\n"
     echo "- Update to $1"
     echo ""
@@ -19,10 +19,10 @@ version_to=$3
 type=$4
 
 echo "-------------------------------------------------------------------"
-LANG=C date | tr -d '\n'
+LANG=C TZ=UTC date | tr -d '\n'
 echo -e " - fabian@ritter-vogt.de\n"
-echo "- Update to $version_to"
+echo "- Update to ${version_to}:"
 echo "  * New $type release"
-echo "  * For more details please see:"
+#echo "  * No changelog available"
 echo "  * http://code.qt.io/cgit/qt/${repo}.git/plain/dist/changes-${version_to}/?h=v${version_to}"
 echo ""
