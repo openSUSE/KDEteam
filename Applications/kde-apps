@@ -72,6 +72,7 @@ kdepim-addons
 kdepim-apps-libs
 kdepim-runtime
 kde-print-manager
+kdesdk-kioslaves
 kdesdk-scripts
 kdesdk-thumbnailers
 kdf
@@ -79,7 +80,6 @@ kdialog
 kdiamond
 kdnssd
 keditbookmarks
-kfilereplace
 kfind
 kfloppy
 kfourinline
