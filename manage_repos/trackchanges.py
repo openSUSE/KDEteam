@@ -62,7 +62,7 @@ def format_log_entries(commit_from: str, commit_to: str, version_from: str) -> s
     all_commits = get_stdout(all_commits_cmd).splitlines()
 
     if not all_commits:
-        yield "   * No code changes since {}".format(version_from)
+        yield "  * No code changes since {}".format(version_from)
         return
 
     if len(all_commits) > 30:
