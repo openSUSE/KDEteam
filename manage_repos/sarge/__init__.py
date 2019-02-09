@@ -4,6 +4,7 @@
 #
 # sarge: Subprocess Allegedly Rewards Good Encapsulation :-)
 #
+import errno
 from io import BytesIO
 import logging
 import os
@@ -22,7 +23,7 @@ import threading
 
 try:
     from logging import NullHandler
-except ImportError:
+except ImportError:  # pragma: no cover
     class NullHandler(logging.Handler):
         def handle(self, record): pass
 
@@ -36,7 +37,7 @@ __all__ = ('shell_quote', 'Capture', 'Command', 'ShellFormatter', 'Pipeline',
            'shell_format', 'run', 'parse_command_line',
            'capture_stdout', 'capture_stderr', 'capture_both')
 
-__version__ = '0.1.4'
+__version__ = '0.1.5.post0'
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -48,12 +49,12 @@ parse_logger = logging.getLogger('%s.parse' % __name__)
 #
 # This runs on Python 2.x and 3.x from the same code base - no need for 2to3.
 #
-if sys.version_info[0] < 3:
+if sys.version_info[0] < 3:  # pragma: no cover
     PY3 = False
     text_type = unicode
     binary_type = str
     string_types = basestring,
-else:
+else:  # pragma: no cover
     PY3 = True
     text_type = str
     binary_type = bytes
@@ -240,8 +241,8 @@ class Capture(WithMixin):
                 chunk = stream.read(chunk_size)
             if chunk:
                 self.buffer.put_nowait(chunk)
-                logger.debug('queued chunk of length %d: %r', len(chunk),
-                             chunk[:30])
+                logger.debug('queued chunk of length %d to %s: %r', len(chunk),
+                             self.buffer, chunk[:30])
                 if self.pattern and not self.matched.is_set():
                     self._try_match()
             if chunk_size > 0:
@@ -399,7 +400,7 @@ class Capture(WithMixin):
                 logger.debug('failed to join thread: %s', t)
                 #raise
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return '%s-%d' % (self.__class__.__name__, self.counter)
 
 
@@ -467,13 +468,13 @@ class Popen(subprocess.Popen):
     def _get_handles(self, stdin, stdout, stderr):
         def close(h):
             if h not in (-1, None):
-                if subprocess.mswindows:
+                if hasattr(h, 'Close'):
                     h.Close()
                 else:
                     os.close(h)
 
         def dup(h):
-            if subprocess.mswindows:
+            if hasattr(self, '_make_inheritable'):
                 result = self._make_inheritable(h)
             else:
                 result = os.dup(h)
@@ -489,6 +490,7 @@ class Popen(subprocess.Popen):
             # To handle, we check for a 2-tuple return and act accordingly.
             PIPE = subprocess.PIPE
             t = super(Popen, self)._get_handles(stdin, PIPE, PIPE)
+            # logger.debug('Base _get_handles returned %s', t)
             nreturned = len(t)
             if nreturned == 2:
                 p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t[0]
@@ -497,15 +499,25 @@ class Popen(subprocess.Popen):
                 p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t
             logger.debug('swapping stdout and stderr')
             if nreturned == 2:
-                return (p2cread, p2cwrite, errread,
-                        errwrite, c2pread, c2pwrite), to_close
+                # p2cread, c2pwrite and errwrite are closed in the parent.
+                # So we should add them to to_close, as subprocess will
+                # expect that.
+                for h in (p2cread, c2pwrite, errwrite):
+                    if h is not None:
+                        to_close.add(h)
+                result = (p2cread, p2cwrite, errread,
+                          errwrite, c2pread, c2pwrite), to_close
             else:
-                return p2cread, p2cwrite, errread, errwrite, c2pread, c2pwrite
+                result = p2cread, p2cwrite, errread, errwrite, c2pread, c2pwrite
+            # logger.debug('Our _get_handles returned %s', result)
+            return result
+
         else:
             orig_stdout = stdout
             if stdout == STDERR:
                 stdout = None
             t = super(Popen, self)._get_handles(stdin, stdout, stderr)
+            # logger.debug('Base _get_handles returned %s', t)
             nreturned = len(t)
             if nreturned == 2:
                 p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite = t[0]
@@ -519,10 +531,18 @@ class Popen(subprocess.Popen):
                 c2pread = dup(errread)
                 c2pwrite = dup(errwrite)
             if nreturned == 2:
-                return (p2cread, p2cwrite, c2pread,
-                        c2pwrite, errread, errwrite), to_close
+                # p2cread, c2pwrite and errwrite are closed in the parent.
+                # So we should add them to to_close, as subprocess will
+                # expect that.
+                for h in (p2cread, c2pwrite, errwrite):
+                    if h is not None:
+                        to_close.add(h)
+                result = (p2cread, p2cwrite, c2pread,
+                          c2pwrite, errread, errwrite), to_close
             else:
-                return p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
+                result = p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
+            # logger.debug('Our _get_handles returned %s', result)
+            return result
 
     if os.name == 'posix' and sys.version_info[0] < 3:
         # Issue #12: add restore_signals support to avoid spurious
@@ -542,9 +562,11 @@ class Popen(subprocess.Popen):
                     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
                     if preexec_fn:
                         preexec_fn()
+            # logger.debug('Calling Base _execute_child: %s', ((args, executable,
+                                                              # preexec, rest),))
             super(Popen, self)._execute_child(args, executable, preexec, *rest)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         values = []
         for attr in ('returncode', 'stdin', 'stdout', 'stderr'):
             values.append('%s=%s' % (attr, getattr(self, attr, None)))
@@ -594,14 +616,14 @@ class Command(object):
         self.process = None
         logger.debug('%r created', self)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         if isinstance(self.args, basestring):
             s = self.args
         else:
             s = ' '.join(self.args)
         return '%s(%r)' % (self.__class__.__name__, s)
 
-    def run(self, input=None, async=False):
+    def run(self, input=None, async_=False):
         """
         Run the command with optional input and either synchronously or
         asynchronously.
@@ -611,10 +633,10 @@ class Command(object):
                       If it is a byte string, it is used as is. Otherwise, a
                       file-like object containing bytes should be passed: this
                       will be read to the end, but not closed.
-        :param async: If ``True``, this method returns without waiting for the
-                      subprocess to complete. Otherwise, it awaits completion
-                      by calling the :meth:`subprocess.Popen.wait` method.
-        :type async:  bool
+        :param async_: If ``True``, this method returns without waiting for the
+                       subprocess to complete. Otherwise, it awaits completion
+                       by calling the :meth:`subprocess.Popen.wait` method.
+        :type async_:  bool
         """
         # noinspection PyBroadException
         try:
@@ -629,7 +651,14 @@ class Command(object):
                 else:
                     self.kwargs['stdin'] = subprocess.PIPE
             logger.debug('About to call Popen: %s, %s', self.args, self.kwargs)
-            self.process = p = Popen(self.args, **self.kwargs)
+            try:
+                self.process = p = Popen(self.args, **self.kwargs)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    raise ValueError('Command not found: %s' % self.args[0])
+            except Exception as e:  #pragma: no cover
+                logger.exception('Popen call failed: %s: %s', type(e), e)
+                raise
             self.stdin = p.stdin
             logger.debug('Popen: %s, %s -> %s', self, self.kwargs, p.__dict__)
             if isinstance(input, BytesIO):
@@ -649,7 +678,7 @@ class Command(object):
                 s = getattr(self, attr, None)
                 if isinstance(s, Capture):
                     s.add_stream(getattr(p, attr))
-            if not async:
+            if not async_:
                 logger.debug('about to wait for process')
                 p.wait()
         finally:
@@ -722,7 +751,7 @@ class Node(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         chunks = []
         d = dict(self.__dict__)
         kind = d.pop('kind')
@@ -900,7 +929,7 @@ class CommandLineParser(object):
             if d:
                 raise ValueError('semantics: can only redirect stdout and '
                                  'stderr, not %s' % list(d.keys()))
-        if sys.platform == 'win32':
+        if sys.platform == 'win32':  #pragma: no cover
             from .utils import find_command
 
             cmd = find_command(node.command[0])
@@ -999,7 +1028,7 @@ class Pipeline(WithMixin):
         assert result.kind == 'command'
         return result
 
-    def run_node_in_thread(self, node, input, async):
+    def run_node_in_thread(self, node, input, async_):
         """
         Run a node in a separate thread.
 
@@ -1011,35 +1040,35 @@ class Pipeline(WithMixin):
         # for that node - even when there are delays because of e.g.
         # sleep commands or other time-consuming commands. That's
         # what these events are for - they're set at the end of
-        # run_node, and waited on int the pipeline's wait and run
+        # run_node, and waited on in the pipeline's wait and run
         # methods.
         e = threading.Event()
         with self.lock:
             self.events.append(e)
         t = threading.Thread(target=self.run_node, args=(node, input,
-                                                         async, e))
+                                                         async_, e))
         t.daemon = True
         logger.debug('thread %s started to run node: %s', t.name, node)
         t.start()
 
-    def run(self, input=None, async=False):
+    def run(self, input=None, async_=False):
         """
         Run the commands in the pipeline.
 
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         """
         self.commands = []
         self.opened = []
         node = self.tree
         # Issue #20: run in thread if async
-        if not async:
-            self.run_node(node, input=input, async=async)
+        if async_:
+            self.run_node_in_thread(node, input, async_=True)
         else:
-            self.run_node_in_thread(node, input, async=True)
+            self.run_node(node, input=input, async_=False)
         return self
 
     @property
@@ -1069,7 +1098,12 @@ class Pipeline(WithMixin):
         """
         result = []
         if self.commands:
-            result = [c.process.returncode for c in self.commands]
+            for c in self.commands:
+                rc = None
+                if c.process:
+                    rc = c.process.returncode
+                result.append(rc)
+            # result = [c.process.returncode for c in self.commands]
         return result
 
     def wait_events(self):
@@ -1098,8 +1132,7 @@ class Pipeline(WithMixin):
         have completed.
         """
         logger.debug('pipeline closing')
-        for e in self.events:
-            e.wait()
+        self.wait_events()
         for cmd in self.commands:
             cmd.wait()
             p = cmd.process
@@ -1116,7 +1149,25 @@ class Pipeline(WithMixin):
         for stream in self.opened:
             stream.close()
 
-    def run_node(self, node, input, async, event=None):
+    def poll_last(self):
+        """
+        Check if the last command to run has terminated, and return its exit
+        code, if available.
+        """
+        if self.commands:
+            return self.commands[-1].poll()
+
+    def poll_all(self):
+        """
+        Check if all commands to run have terminated. Return a list of exit
+        codes, where available.
+        """
+        result = []
+        if self.commands:
+            result = [c.poll() for c in self.commands]
+        return result
+
+    def run_node(self, node, input, async_, event=None):
         """
         This runs a single node in the parse tree.
 
@@ -1124,16 +1175,16 @@ class Pipeline(WithMixin):
         :type node: An AST node from the parser.
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         :param event: If specified, call :meth:`threading.Event.set` on the
                       event.
         :type event: :class:`threading.Event' or ``None``.
         """
         kind = node.kind
         method = 'run_%s_node' % kind
-        result = getattr(self, method)(node, input, async)
+        result = getattr(self, method)(node, input, async_)
         if event:
             event.set()
         return result
@@ -1184,7 +1235,7 @@ class Pipeline(WithMixin):
                 stderr = stream
         return stdout, stderr
 
-    def run_logical_node(self, node, input, async):
+    def run_logical_node(self, node, input, async_):
         """
         This runs a 'logical' node in the parse tree.
 
@@ -1193,11 +1244,11 @@ class Pipeline(WithMixin):
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes. Text will be
                      encoded using UTF-8.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         """
-        logger.debug('started: %s, %s, %s', node, input, async)
+        logger.debug('started: %s, %s, %s', node, input, async_)
         parts = node.parts
         last = len(parts) - 1
         assert last > 1
@@ -1221,7 +1272,7 @@ class Pipeline(WithMixin):
             else:
                 try:
                     stdout, stderr = self.get_redirects(curr)
-                except IOError:
+                except IOError:  #pragma: no cover
                     if prev and stdin == prev.process.stdout:
                         stdin.close()
                     raise
@@ -1239,19 +1290,19 @@ class Pipeline(WithMixin):
             else:
                 if stdout == STDERR:
                     assert self.stdout is None
-                use_async = async
+                use_async = async_
             curr.cmd = self.new_command(curr.command,
                                         stdout=stdout or self.stdout,
                                         stderr=stderr or self.stderr,
                                         **self.kwargs)
-            curr.cmd.run(input=stdin, async=use_async)
+            curr.cmd.run(input=stdin, async_=use_async)
             # Issue 12: close stdin after spawning the child that uses it
             if prev and stdin == prev.process.stdout:
                 stdin.close()
             prev = curr.cmd
             i += 2
 
-    def run_command_node(self, node, input, async):
+    def run_command_node(self, node, input, async_):
         """
         This runs a 'command' node in the parse tree.
 
@@ -1259,11 +1310,11 @@ class Pipeline(WithMixin):
         :type node: An AST node from the parser.
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         """
-        logger.debug('started: %s, %s, %s', node, input, async)
+        logger.debug('started: %s, %s, %s', node, input, async_)
         kwargs = dict(self.kwargs)
         stdout, stderr = self.get_redirects(node)
         if node != self.last:
@@ -1279,7 +1330,7 @@ class Pipeline(WithMixin):
                                  'places')
             kwargs['stderr'] = self.stderr or stderr
         node.cmd = self.new_command(node.command, **kwargs)
-        node.cmd.run(input=input, async=async)
+        node.cmd.run(input=input, async_=async_)
 
     def get_status(self, node):
         """
@@ -1293,7 +1344,7 @@ class Pipeline(WithMixin):
             last = self.find_last_command(node)
         return last.cmd.process.returncode
 
-    def run_pipeline_node(self, node, input, async):
+    def run_pipeline_node(self, node, input, async_):
         """
         This runs a 'pipeline' node in the parse tree.
 
@@ -1302,11 +1353,11 @@ class Pipeline(WithMixin):
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes. Text will be
                      encoded using UTF-8.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         """
-        logger.debug('started: %s, %s, %s', node, input, async)
+        logger.debug('started: %s, %s, %s', node, input, async_)
         parts = node.parts
         last = len(parts) - 1
         assert last > 1
@@ -1320,11 +1371,11 @@ class Pipeline(WithMixin):
                 input = ensure_stream(input)
                 # run the current command
             if i < last:
-                # need to know status, so run with async=False
+                # need to know status, so run with async_=False
                 use_async = False
             else:
-                use_async = async
-            self.run_node(curr, input, async=use_async)
+                use_async = async_
+            self.run_node(curr, input, async_=use_async)
             if i < last:
                 check = parts[i + 1].check
                 if check == '&&':
@@ -1336,7 +1387,7 @@ class Pipeline(WithMixin):
             prev = curr
             i += 2
 
-    def run_list_node(self, node, input, async):
+    def run_list_node(self, node, input, async_):
         """
         This runs a 'list' node in the parse tree.
 
@@ -1345,11 +1396,11 @@ class Pipeline(WithMixin):
         :param input: The data to pass to the command.
         :type input: Bytes, text or a file-like object of bytes. Text will be
                      encoded using UTF-8.
-        :param async: If True, don't wait for the pipeline to complete
-                      before returning.
-        :type async: bool
+        :param async_: If True, don't wait for the pipeline to complete
+                       before returning.
+        :type async_: bool
         """
-        logger.debug('started: %s, %s, %s', node, input, async)
+        logger.debug('started: %s, %s, %s', node, input, async_)
         parts = node.parts
         last = len(parts) - 1
         assert last > 1
@@ -1364,12 +1415,12 @@ class Pipeline(WithMixin):
             if i < last:
                 use_async = parts[i + 1].sync == '&'
             else:
-                use_async = async
+                use_async = async_
             # run the current command
             if not use_async:
-                self.run_node(curr, input, async=use_async)
+                self.run_node(curr, input, async_=use_async)
             else:
-                self.run_node_in_thread(curr, input, async=False)
+                self.run_node_in_thread(curr, input, async_=False)
             prev = curr
             i += 2
 
@@ -1381,7 +1432,7 @@ def run(cmd, **kwargs):
     Run a command with optional input and either synchronously or
     asynchronously.
 
-    Apart from the ``input`` and ``async`` keyword arguments described below,
+    Apart from the ``input`` and ``async_`` keyword arguments described below,
     other keyword arguments are passed to the created :class:`Pipeline`
     instance, and thence to :class:`subprocess.Popen` via a :class:`Command`
     instance. Note that the ``env`` kwarg is treated differently to how it is
@@ -1396,19 +1447,19 @@ def run(cmd, **kwargs):
                   it is a byte string, it is used as is. Otherwise, a
                   file-like object containing bytes should be passed: this
                   will be read to the end, but not closed.
-    :param async: If ``True``, this method returns without waiting for the
-                  subprocess to complete. Otherwise, it awaits completion
-                  by calling the :meth:`subprocess.Popen.wait` method.
-    :type async:  bool
+    :param async_: If ``True``, this method returns without waiting for the
+                   subprocess to complete. Otherwise, it awaits completion
+                   by calling the :meth:`subprocess.Popen.wait` method.
+    :type async_:  bool
     """
     input = kwargs.pop('input', None)
-    async = kwargs.pop('async', False)
-    if async:
+    async_ = kwargs.pop('async_', False)
+    if async_:
         p = Pipeline(cmd, **kwargs)
-        p.run(input=input, async=True)
+        p.run(input=input, async_=True)
     else:
         with Pipeline(cmd, **kwargs) as p:
-            p.run(input=input, async=async)
+            p.run(input=input, async_=async_)
     return p
 
 
