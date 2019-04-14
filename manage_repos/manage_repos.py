@@ -166,7 +166,6 @@ def update_version(specfile: str, version_to: str) -> None:
                 # It's 1.2 rather than 1.2.3, strip last part
                 version_path = re.sub(r"\.[0-9]{1,}$", "", version_to)
                 line = EXTRA_RE.sub(r"\g<1>" + version_path, line)
-            # TODO: Do the same for patches
             print(line)
 
 
