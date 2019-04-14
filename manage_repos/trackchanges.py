@@ -52,7 +52,8 @@ def cd(subpath):
 # Changelog handling
 
 
-def format_log_entries(commit_from: str, commit_to: str, version_from: str) -> str:
+def format_log_entries(commit_from: str, commit_to: str,
+                       version_from: str) -> str:
 
     assert commit_to is not None
 
@@ -87,7 +88,8 @@ def format_log_entries(commit_from: str, commit_to: str, version_from: str) -> s
         bug_content = [line.strip() for line in bug_content if line.strip()]
 
         # Check for NO_CHANGELOG entries, skip the commit if so
-        if "NO_CHANGELOG" in bug_content:
+        if "NO_CHANGELOG" in bug_content or any("NO_CHANGELOG" in item
+                                                for item in bug_content):
             continue
 
         # Split BUG: keywords and keep only the number, replace them
