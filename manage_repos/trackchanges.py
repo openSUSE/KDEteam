@@ -136,16 +136,15 @@ def create_changes_entry(repo_name: str, commit_from: str, commit_to: str,
         contents.append("  * For more details please see:")
         contents.append("  * {}".format(url))
 
-    contents.append("- Changes since {}:".format(version_from))
-
     commit_data = list()
 
     for entry in format_log_entries(commit_from, commit_to, version_from):
         commit_data.append(entry)
 
     if not commit_data:
-        contents.append("  * No code changes since {}".format(version_from))
+        contents.append("- No code changes since {}".format(version_from))
     else:
+        contents.append("- Changes since {}:".format(version_from))
         contents.extend(commit_data)
 
     if current_patches and previous_patches:
