@@ -86,6 +86,10 @@ def format_log_entries(commit_from: str, commit_to: str, version_from: str) -> s
         bug_content = get_stdout(bug_content_cmd).splitlines()
         bug_content = [line.strip() for line in bug_content if line.strip()]
 
+        # Check for NO_CHANGELOG entries, skip the commit if so
+        if "NO_CHANGELOG" in bug_content:
+            continue
+
         # Split BUG: keywords and keep only the number, replace them
         # with "kde#NNNN"
         bug_content = ["kde#{}".format(line.split(":")[1].strip())
