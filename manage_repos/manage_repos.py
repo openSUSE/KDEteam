@@ -150,10 +150,6 @@ def parse_spec(specfile: Path) -> (str, list, str):
     # FIXME: Won't work for special oS macros
     upstream_source = replace_macros(upstream_source, specfile)
 
-    # Workaround a quirk with the parser
-    if "kde-l10n" in upstream_source:
-        upstream_source = "kde-l10n"
-
     patches = list() if not hasattr(specfile, "patches") else specfile.patches
 
     return version, patches, upstream_source
