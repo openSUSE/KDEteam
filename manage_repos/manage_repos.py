@@ -194,7 +194,6 @@ def update_package(entry: Path, version_to: str,
     # we override the one in the spec
 
     current_version = current_version if version_from is None else version_from
-    specfile = specfile if upstream_reponame != "kde-l10n" else specfile + ".in"
 
     if current_version == version_to:
         print("Package {} is already at the latest version {}."
