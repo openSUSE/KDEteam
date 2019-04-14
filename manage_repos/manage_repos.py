@@ -207,12 +207,8 @@ def update_package(entry: Path, version_to: str,
     else:
         tarball_template = "{name}-{version}.tar.xz"
 
-    if package_name != "kdelibs4":
-        tarball_pattern = tarball_template.format(name=upstream_reponame,
-                                                  version=version_to)
-    else:
-        tarball_pattern = tarball_template.format(name=upstream_reponame,
-                                                  version="4.14.*")
+    tarball_pattern = tarball_template.format(name=upstream_reponame,
+                                              version=version_to)
 
     if tarball_directory is not None and tarball_directory.exists():
         result = _copy_tarballs(entry, tarball_directory, tarball_pattern,
