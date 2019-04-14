@@ -206,7 +206,8 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
     upstream_repo_path = checkout_dir / upstream_reponame
 
     if not upstream_repo_path.exists():
-        print("Missing checkout for {}".format(upstream_reponame))
+        print("Missing checkout for {}".format(upstream_reponame),
+              "Path {} does not exist".format(upstream_repo_path))
         create_dummy_changes_entry(version_to, changes_file, kind,
                                    committer)
         return
@@ -215,15 +216,10 @@ def record_changes(changes_file: str, checkout_dir: Path, version_from: str,
 
         # Switch to the branch to get up to date information
         if branch is not None and branch != "master":
-            branch = "KDE/4.14" if package_name == "kdelibs4" else branch
             cmd = run(["git", "checkout", branch])
 
         if not upstream_tag_available(commit_to):
-
-            if package_name == "kdelibs4":
-                commit_to = "KDE/4.14"
-            else:
-                commit_to = branch
+            commit_to = branch
 
         create_changes_entry(upstream_reponame, commit_from, commit_to,
                              version_from, version_to, changetype, kind,
