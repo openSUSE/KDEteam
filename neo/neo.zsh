@@ -257,7 +257,6 @@ fetch_changes() {
   local -aU changelog_entries
 
   foreach git_repo ($(application_name ${new_tarballs})) {
-    debug Current package $git_repo
 
     [[ -d ${git_repo} ]] || git clone git://anongit.kde.org/${git_repo}
     
@@ -286,7 +285,7 @@ fetch_changes() {
     fi
 
     old_tag="v${old_version}"
-debug TAGS: $new_tag // $old_tag
+
     commits=($(git log --pretty=format:%H --no-merges ${old_tag}...${new_tag}))
 
     foreach commit (${commits}) {
@@ -298,7 +297,6 @@ debug TAGS: $new_tag // $old_tag
         # the next one
         if [[ ${commit_log} =~ "This reverts commit" ]]; then
           reverted_commits+=${${commit_log##*This reverts commit }%%.*}
-          debug This commit reverts ${reverted_commits}, ignoring
         else
           # Ignore commits if the commit message contains GIT_SILENT or SVN_SILENT
           if [[ ! ${commit_log} =~ _SILENT ]]; then
@@ -325,8 +323,6 @@ debug TAGS: $new_tag // $old_tag
             unset obs_bug_entry
           fi
         fi
-      else
-        debug Commit ${commit} was reverted, ignoring
       fi
     }
 
@@ -337,7 +333,6 @@ debug TAGS: $new_tag // $old_tag
       changelog_body+="${changelog_entries}"
     fi
     # The changelog is complete, save it
-    # debug changelog: ${changelog_intro}${changelog_body}
     echo ${changelog_intro}${changelog_body} > ${TARBALLS_DIR}/changelogs/${git_repo}.changes
     popd
 
