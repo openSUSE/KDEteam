@@ -54,7 +54,7 @@ throw_error() {
 
 # Print something
 debug() {
-  print "Debug: ${*}"
+  print "INFO: ${*}"
 }
 
 # Strip the path from a file name (e.g: akonadi-19.07.90.tar.xz)
