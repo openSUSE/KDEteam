@@ -1,0 +1,10 @@
+# Packages for which the tarball name is the same as the applications/frameworks/plasma ones
+ignore_list=(
+libkcompactdisc4
+libkcddb4
+kwalletmanager
+konsole4-part
+kio_audiocd4
+kdesdk4-scripts
+kate4-parts
+)

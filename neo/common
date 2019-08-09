@@ -1,0 +1,33 @@
+# Settings file. This is the only file you should modify
+
+# Committer name/email
+COMMITER="johndoe@opensuse.org"
+
+# Directory where the new files are saved
+TARBALLS_DIR="${HOME}/openSUSE/release"
+
+# Directory where the commands list will be created
+UPDATE_SCRIPT_DIR="${TARBALLS_DIR}"
+
+# Where the all OBS repositories are checked out
+OBS_DIR="${HOME}/openSUSE"
+
+# Your OBS username
+OBS_USERNAME="johndoe"
+
+# Local git checkouts
+GIT_DIR="/data/kde/src"
+
+##########################################################
+# Modifying the parameters below should not be necessary #
+##########################################################
+
+# If upstream makes different type of releases, update the
+# list_packaged_tarballs() function
+RELEASE_NAME=(applications frameworks plasma)
+
+# The tarballs extension
+EXT="tar.xz"
+
+# Where releases announces are published
+ANNOUNCE_URL="https://www.kde.org/announcements"
