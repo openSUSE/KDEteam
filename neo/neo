@@ -13,7 +13,7 @@
 # The script will:
 # - Determine in which folder a tarball shall be moved and remove the need to
 #   maintain a list of released applications and special handling rules
-# - Move files in the right folders
+# - Move files into the right folders
 # - Find the versions automatically and update the spec files accordingly
 #
 # After that:
@@ -75,14 +75,14 @@ package_name() {
   echo ${_packagename}
 }
 
-# Return the package path without (e.g /home/johndoe/openSUSE/KDE:Applications/akonadi-server)
+# Return the package path (e.g /home/johndoe/openSUSE/KDE:Applications/akonadi-server)
 package_path() {
   local _packagepath=${*%/*}
   echo ${_packagepath}
 }
 
 
-# To allow reviewing the commands to run, this script creates a shell list
+# To allow reviewing the commands to run, this script creates a shell script
 write_command() {
   echo $* >> ${UPDATE_SCRIPT_DIR}/update_packages
 }
@@ -102,7 +102,7 @@ check_release_name() {
   # Check how many parameters were passed
   [[ ${#release_name[@]} -ne 1 ]] && throw_error "Incorrect number of parameters"
 
-  # Check if the parameter matches RELEASE_NAME
+  # Check if the parameter matches $RELEASE_NAME
   [[ -n "${RELEASE_NAME[(r)${release_name[1]}]}" ]] || throw_error "Wrong parameter. Must be one of: ${RELEASE_NAME}"
 
   # Check if the directories exist
