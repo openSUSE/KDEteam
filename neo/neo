@@ -44,6 +44,7 @@ source ${SCRIPT_DIR}/common
 source ${SCRIPT_DIR}/ignore_list
 
 zmodload zsh/regex
+autoload -U regexp-replace
 
 ##### Helper functions #####
 
@@ -301,6 +302,8 @@ fetch_changes() {
           # Ignore commits if the commit message contains GIT_SILENT or SVN_SILENT
           if [[ ! ${commit_log} =~ _SILENT ]]; then
             commit_summary="$(git show -s --pretty=format:%s ${commit})"
+            # Remove trailing whitespaces
+            regexp-replace commit_summary '\s*$' ''
 
             # Now look for the 'BUG' keyword (and skip CCBUG)
             if [[ "${commit_log}" -regex-match '.*^\s*BUG' ]]; then
