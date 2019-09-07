@@ -335,7 +335,9 @@ fetch_changes() {
       changelog_body="- No code change since ${old_version}"
     else
       changelog_body="- Changes since ${old_version}:"
-      changelog_body+="${changelog_entries}"
+      foreach changelog_entry (${changelog_entries}) {
+        changelog_body="${changelog_body}${changelog_entry}"
+      }
     fi
     # The changelog is complete, save it
     echo ${changelog_intro}${changelog_body} > ${TARBALLS_DIR}/changelogs/${git_repo}.changes
