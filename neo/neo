@@ -181,7 +181,7 @@ find_old_version() {
 obs_checkout_branch() {
   branched_checkout_dir="home:${OBS_USERNAME}:${release_name}-${new_version}"
   write_command pushd ${OBS_DIR}
-  write_command osc checkout ${branched_checkout_dir}
+  write_command "[[ ! -d ${branched_checkout_dir} ]] && osc checkout ${branched_checkout_dir} || osc update ${branched_checkout_dir}"
 }
 
 # Commands to replace the old files with the new ones
