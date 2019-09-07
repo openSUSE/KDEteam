@@ -265,6 +265,8 @@ fetch_changes() {
 
     # 
     git fetch origin &>/dev/null
+    # Also make sure the tags are pulled
+    git fetch --tags &>/dev/null
 
     # Fetch the existing tags
     tags=($(git tag))
