@@ -119,7 +119,10 @@ list_new_tarballs() {
 
 # Find the new version.
 find_new_version() {
- new_version=${${new_tarballs[1]%.${EXT}}##*-}
+  new_version=${${new_tarballs[1]%.${EXT}}##*-}
+  new_major_version=${new_version%%.*}
+  new_minor_version=${${new_version#*.}%.*}
+  new_patch_version=${new_version##*.}
 }
 
 # List the current packages files
@@ -174,7 +177,10 @@ find_packages_to_update() {
 
 # Now set the old version
 find_old_version() {
- old_version=${${packaged_tarballs[1]%.${EXT}}##*-}
+  old_version=${${packaged_tarballs[1]%.${EXT}}##*-}
+  old_major_version=${old_version%%.*}
+  old_minor_version=${${old_version#*.}%.*}
+  old_patch_version=${old_version##*.}
 }
 
 # Write commands to download the branched packages
@@ -216,11 +222,8 @@ prepare_changelog() {
   # xx.yy.[1-9] -> bugfix
   # xx.yy.[80-89] -> feature (beta)
   # xx.yy.[90-99] -> feature (rc)
-  major_version=${new_version%%.*}
-  minor_version=${${new_version#*.}%.*}
-  patch_version=${new_version##*.} 
 
-  if [[ ${patch_version} -eq 0 ]] || [[ ${patch_version} -ge 80 ]] && release_type=feature || release_type=bugfix
+  if [[ ${new_patch_version} -eq 0 ]] || [[ ${new_patch_version} -ge 80 ]] && release_type=feature || release_type=bugfix
 
   # The announce URL is different for applications, frameworks and plasma
   if [[ ${release_name} == frameworks ]]; then
@@ -228,15 +231,15 @@ prepare_changelog() {
   elif [[ ${release_name} == plasma ]]; then
     changelog_url=https://www.kde.org/announcements/plasma-${new_version}.php
   else
-    if [[ ${patch_version} -lt 80 ]]; then
+    if [[ ${new_patch_version} -lt 80 ]]; then
       changelog_url=${ANNOUNCE_URL}/announce-applications-${new_version}.php
     else
       # The applications URL is different for beta and RC
       # 19.07.xx == 19.08-{beta,rc}
-      if [[ $patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${major_version}.0$((${minor_version} + 1))-beta.php
+      if [[ $new_patch_version -lt 90 ]]; then
+        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.0$((${new_minor_version} + 1))-beta.php
       else
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${major_version}.0$((${minor_version} + 1))-rc.php
+        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.0$((${new_minor_version} + 1))-rc.php
       fi
     fi
   fi
@@ -275,9 +278,9 @@ fetch_changes() {
     # If the tag wasn't pushed yet, use the branch to get changelog entries
     if [[ ! -n ${tags[(r)v${new_version}]} ]]; then
       if [[ "${release_name}" == applications ]]; then
-        new_tag="origin/Applications/${major_version}.${minor_version}"
+        new_tag="origin/Applications/${new_major_version}.${new_minor_version}"
       elif [[ "${release_name}" == plasma ]]; then
-        new_tag="origin/Plasma/${major_version}.${minor_version}"
+        new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
       else
         # Frameworks pre-release tags are called v${new_version}-rcX
         # TODO handle rc2, rc3...
@@ -370,10 +373,12 @@ update_spec_file() {
     fi
     
     write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"
+    if [[ ${release_name} == "frameworks" ]]; then
+      write_command "perl -pi -e 's#_tar_path ${old_major_version}.${old_minor_version}#_tar_path ${new_major_version}.${new_minor_version}#' $(package_name ${packaged_tarballs[$i]}).spec"
+    fi
     
     # Check if the 'Source' URL shall be updated in the spec file
-    [[ $patch_version -ge 80 ]] && new_download_url_dir=unstable || new_download_url_dir=stable
-    old_patch_version=${old_version##*.}
+    [[ $new_patch_version -ge 80 ]] && new_download_url_dir=unstable || new_download_url_dir=stable
     [[ $old_patch_version -ge 80 ]] && old_download_url_dir=unstable || old_download_url_dir=stable
     
     if [[ "${old_download_url_dir}" != "${new_download_url_dir}" ]]; then
