@@ -82,14 +82,14 @@ package_path() {
   echo ${_packagepath}
 }
 
-
 # To allow reviewing the commands to run, this script creates a shell script
 write_command() {
   echo $* >> ${UPDATE_SCRIPT_DIR}/update_packages
 }
-# Create the file
+# Prepare the file
 echo "#!/bin/zsh" > ${UPDATE_SCRIPT_DIR}/update_packages
 write_command "#"
+write_command "setopt +o nomatch"
 
 ############################
 
