@@ -107,9 +107,15 @@ check_release_name() {
   [[ -n "${RELEASE_NAME[(r)${release_name[1]}]}" ]] || throw_error "Wrong parameter. Must be one of: ${RELEASE_NAME}"
 
   # Check if the directories exist
-  foreach _local_dir (TARBALLS_DIR GIT_DIR KA_CHECKOUT_DIR KF_CHECKOUT_DIR KUF_CHECKOUT_DIR) {
-    [[ -d ${(P)_local_dir} ]] || throw_error "${_local_dir} doesn't exist. edit the common file"
+  local -a _required_dirs=(TARBALLS_DIR GIT_DIR)
+  [[ ${release_name} == "applications" ]] && _required_dirs+=KA_CHECKOUT_DIR
+  [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]] && _required_dirs+=(KF_CHECKOUT_DIR KUF_CHECKOUT_DIR)
+
+  local -a _missing_folders
+  foreach _local_dir (${_required_dirs}) {
+    [[ -d ${(P)_local_dir} ]] || _missing_folders+=${_local_dir}
   }
+  [[ ${#_missing_folders[@]} -gt 0 ]] && throw_error "Value for these parameters are not correctly set, edit the 'common' file: ${_missing_folders}."
 }
 
 # List all the newly released files
