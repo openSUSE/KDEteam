@@ -139,9 +139,9 @@ list_packaged_tarballs() {
     packaged_tarballs[(r)${OBS_DIR}/${repository_name}/${pkg}/*]=()
   }
 
-  # Stop if the KDE:Unstable:Frameworks repository checkout cannot be found
-  if [[ ${release_name} == "frameworks" ]]; then
-    [[ -d "${OBS_DIR}/KDE:Unstable:Frameworks" ]] || throw_error "KDE:Unstable:Frameworks is also needed before updating the frameworks packages"
+  # For frameworks and plasma releases, the spec files from the unstable repository is used
+  if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
+    [[ -d "${OBS_DIR}/KDE:Unstable:Frameworks" ]] || throw_error "KDE:Unstable:Frameworks is also needed before updating the frameworks or plasma packages"
   fi
 }
 
