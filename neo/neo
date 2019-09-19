@@ -160,7 +160,7 @@ find_packages_to_update() {
       _sorted_packaged_tarballs+=${packaged_tarballs[(r)${_pattern}]}
 
       # Write the osc command to branch these packages
-      write_command osc branch ${repository_name} $(package_name ${packaged_tarballs[(r)${_pattern}]}) home:${OBS_USERNAME}:${release_name}-${new_version}
+      write_command "osc branch ${repository_name} $(package_name ${packaged_tarballs[(r)${_pattern}]}) home:${OBS_USERNAME}:${release_name}-${new_version}"
     else
       # New packages
       new_packages+=${_package}
@@ -169,7 +169,7 @@ find_packages_to_update() {
       new_tarballs[(r)${_pattern}]=()
     fi
   }
-  debug New packages in this release: ${new_packages}
+  debug "New packages in this release: ${new_packages}"
 
   # The list is now trimmed, only keep the useful packages
   packaged_tarballs=(${_sorted_packaged_tarballs})
@@ -186,28 +186,28 @@ find_old_version() {
 # Write commands to download the branched packages
 obs_checkout_branch() {
   branched_checkout_dir="home:${OBS_USERNAME}:${release_name}-${new_version}"
-  write_command pushd ${OBS_DIR}
+  write_command "pushd ${OBS_DIR}"
   write_command "[[ ! -d ${branched_checkout_dir} ]] && osc checkout ${branched_checkout_dir} || osc update ${branched_checkout_dir}"
 }
 
 # Commands to replace the old files with the new ones
 replace_files() {
-  write_command mkdir -p ${TARBALLS_DIR}/done
+  write_command "mkdir -p ${TARBALLS_DIR}/done"
   # The item positions in both the packaged_tarballs and new_tarballs arrays
   # shall match at this point
   # copy the new file and signature and move them to the 'done' subdir
   
   for (( i = 1; i <= $#new_tarballs; i++ )); do
     write_command ""
-    write_command cp ${new_tarballs[$i]} ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})
-    write_command mv ${new_tarballs[$i]} $(package_path ${new_tarballs[$i]})/done
+    write_command "cp ${new_tarballs[$i]} ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})"
+    write_command "mv ${new_tarballs[$i]} $(package_path ${new_tarballs[$i]})/done"
     
     write_command "    if [[ -f ${new_tarballs[$i]}.sig ]]; then
       cp -f ${new_tarballs[$i]}.sig ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})
       mv ${new_tarballs[$i]}.sig $(package_path ${new_tarballs[$i]})/done
     fi"
     # Remove the old files
-    write_command rm -f ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})/$(relative_filename ${packaged_tarballs[$i]})
+    write_command "rm -f ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})/$(relative_filename ${packaged_tarballs[$i]})"
     write_command "[[ -f ${packaged_tarballs[$i]}.sig ]] && rm -f ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})/$(relative_filename ${packaged_tarballs[$i]}).sig"
   done
   write_command ""
@@ -364,13 +364,13 @@ fetch_changes() {
 # Update the version and URL in the spec file
 update_spec_file() {
   for (( i = 1; i <= $#packaged_tarballs; i++ )); do
-    write_command pushd ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})
-    write_command osc vc -F ${TARBALLS_DIR}/changelogs/$(application_name ${new_tarballs[$i]}).changes
+    write_command "pushd ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})"
+    write_command "osc vc -F ${TARBALLS_DIR}/changelogs/$(application_name ${new_tarballs[$i]}).changes"
     
     # For frameworks release, first copy the spec and patch files from the KDE:Unstable:Frameworks package
     if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
-      write_command rm -f *.{patch,diff}
-      write_command cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} .
+      write_command "rm -f *.{patch,diff}"
+      write_command "cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} ."
     fi
     
     write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"
@@ -405,5 +405,5 @@ update_spec_file
 chmod +x ${UPDATE_SCRIPT_DIR}/update_packages
 
 # Report
-debug The update script is ready.
-debug Check the changelog files in ${TARBALLS_DIR}/changelogs. When ready, run the ${UPDATE_SCRIPT_DIR}/update_packages script
+debug "The update script is ready."
+debug "Check the changelog files in ${TARBALLS_DIR}/changelogs. When ready, run the ${UPDATE_SCRIPT_DIR}/update_packages script"
