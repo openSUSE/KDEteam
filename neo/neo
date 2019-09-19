@@ -299,9 +299,10 @@ fetch_changes() {
     old_tag="v${old_version}"
 
     commits=($(git log --pretty=format:%H --no-merges ${old_tag}...${new_tag}))
+    # If there are more than 10 commits, only mention the bug fixes
+    [[ ${#commits[@] -gt 10 ]] && only_list_bugs=true
 
     foreach commit (${commits}) {
-      
       if [[ -n "${reverted_commits[(Ie)${commit}]}" ]]; then
         commit_log="$(git show -s ${commit})"
 
@@ -332,7 +333,12 @@ fetch_changes() {
               done
               obs_bug_entry+=")"
             fi
-            changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+
+            if [[ -v only_list_bugs ]]; then
+              [[ -v obs_bug_entry ]] && changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+            else
+              changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+            fi
 
             unset obs_bug_entry
           fi
@@ -343,7 +349,11 @@ fetch_changes() {
     if [[ ${changelog_entries} == "" ]]; then
       changelog_body="- No code change since ${old_version}"
     else
-      changelog_body="- Changes since ${old_version}:"
+      if [[ -v only_list_bugs ]]; then
+        changelog_body="- Too many changes since ${old_version}, only listing bugfixes:"
+      else
+        changelog_body="- Changes since ${old_version}:"
+      fi
       foreach changelog_entry (${changelog_entries}) {
         changelog_body="${changelog_body}${changelog_entry}"
       }
@@ -360,6 +370,7 @@ fetch_changes() {
     unset commit_summary
     unset commit_bugs
     unset obs_bug_entry
+    unset only_list_bugs
     changelog_body=()
     changelog_entries=()
     reverted_commits=()    
