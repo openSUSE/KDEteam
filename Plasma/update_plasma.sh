@@ -3,19 +3,20 @@
 # Attention: Reads and overwrites /tmp/change{,s}
 
 # Version number
-version_from="5.14.1"
-version_to="5.14.2"
+version_from="5.16.5"
+version_to="5.16.90"
 # Git refs
-commit_from="v5.14.1"
-commit_to="v5.14.2"
+commit_from="v5.16.5"
+commit_to="origin/Plasma/5.17"
 # Type of update, either "bugfix" or "feature"
-type="bugfix"
+type="feature"
 # Location of plasma repo checkouts (need to be fresh)
 repo_location="/home/fabian/kderepos"
 # Location of downloaded tars. Will be used if available
 tar_location="/home/fabian/plasmatars"
 # If empty, URL will be stripped from source
-tar_url="https://download.kde.org/stable/plasma/%{version}/"
+#tar_url="https://download.kde.org/unstable/plasma/%{version}/"
+tar_url=""
 
 script_dir=$(realpath "$(dirname "$0")")
 

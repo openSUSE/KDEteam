@@ -3,14 +3,14 @@
 # Attention: Reads and overwrites /tmp/change{,s}
 
 # Version number
-version_from="5.11.0-alpha"
-version_to="5.11.0-beta1"
-minor_from="5.11"
-minor_to="5.11"
+version_from="5.13.0"
+version_to="5.13.1"
+minor_from="5.13"
+minor_to="5.13"
 # "development_releases" or "official_releases"
-release_dir="development_releases"
+release_dir="official_releases"
 # Type of update, either "bugfix" or "feature"
-type="feature"
+type="bugfix"
 
 # Derived stuff
 rpm_version="${version_to/-/\~}"
