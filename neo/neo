@@ -300,7 +300,7 @@ fetch_changes() {
 
     commits=($(git log --pretty=format:%H --no-merges ${old_tag}...${new_tag}))
     # If there are more than 10 commits, only mention the bug fixes
-    [[ ${#commits[@] -gt 10 ]] && only_list_bugs=true
+    [[ ${#commits[@]} -gt 10 ]] && only_list_bugs=true
 
     foreach commit (${commits}) {
       if [[ -n "${reverted_commits[(Ie)${commit}]}" ]]; then
