@@ -2,7 +2,7 @@
 if [[ $# -eq 1 ]]; then
     echo "-------------------------------------------------------------------"
     LANG=C TZ=UTC date | tr -d '\n'
-    echo -e " - fabian@ritter-vogt.de\n"
+    echo -e " - Fabian Vogt <fabian@ritter-vogt.de>\n"
     echo "- Update to $1"
     echo ""
     exit 0
@@ -20,7 +20,7 @@ type=$4
 
 echo "-------------------------------------------------------------------"
 LANG=C TZ=UTC date | tr -d '\n'
-echo -e " - fabian@ritter-vogt.de\n"
+echo -e " - Fabian Vogt <fabian@ritter-vogt.de>\n"
 echo "- Update to ${version_to}:"
 echo "  * New $type release"
 #echo "  * No changelog available"
