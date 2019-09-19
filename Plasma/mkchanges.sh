@@ -32,13 +32,14 @@ function entryForCommit {
 
     # Get bugrefs
     bugs="$(git show -s "$commit" | grep -E '^\s*BUG:' | cut --delimiter=: --fields=2 | sed 's/^/,kde#/')"
-
     if [[ -n "${bugs}" ]]; then
         echo -n " ("
+        set -f
         # Remove first ','
         for i in ${bugs#,}; do
             echo -n "${i}"
         done
+        set +f
         echo -n ")"
     fi
 
