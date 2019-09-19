@@ -115,7 +115,9 @@ check_release_name() {
   foreach _local_dir (${_required_dirs}) {
     [[ -d ${(P)_local_dir} ]] || _missing_folders+=${_local_dir}
   }
-  [[ ${#_missing_folders[@]} -gt 0 ]] && throw_error "Value for these parameters are not correctly set, edit the 'common' file: ${_missing_folders}."
+  if [[ ${#_missing_folders[@]} -ne 0 ]]; then
+    throw_error "Value for these parameters are not correctly set, edit the 'common' file: ${_missing_folders}."
+  fi
 }
 
 # List all the newly released files
