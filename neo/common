@@ -1,7 +1,7 @@
 # Settings file. This is the only file you should modify
 
 # Committer name/email
-COMMITER="johndoe@opensuse.org"
+COMMITER="John Doe <johndoe@opensuse.org>"
 
 # Directory where the new files are saved
 TARBALLS_DIR="${HOME}/openSUSE/release"
@@ -17,6 +17,16 @@ OBS_USERNAME="johndoe"
 
 # Local git checkouts
 GIT_DIR="/data/kde/src"
+
+## repositories checkout ABSOLUTE path
+# KDE:Applications
+KA_CHECKOUT_DIR="${OBS_DIR}/KDE:Applications"
+
+# KDE:Frameworks
+KF_CHECKOUT_DIR="${OBS_DIR}/KDE:Frameworks5"
+
+# KDE:Unstable:Frameworks (needed for frameworks and plasma releases)
+KUF_CHECKOUT_DIR="${OBS_DIR}/KDE:Unstable:Frameworks"
 
 ##########################################################
 # Modifying the parameters below should not be necessary #

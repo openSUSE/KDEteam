@@ -107,7 +107,7 @@ check_release_name() {
   [[ -n "${RELEASE_NAME[(r)${release_name[1]}]}" ]] || throw_error "Wrong parameter. Must be one of: ${RELEASE_NAME}"
 
   # Check if the directories exist
-  foreach _local_dir (TARBALLS_DIR OBS_DIR GIT_DIR) {
+  foreach _local_dir (TARBALLS_DIR GIT_DIR KA_CHECKOUT_DIR KF_CHECKOUT_DIR KUF_CHECKOUT_DIR) {
     [[ -d ${(P)_local_dir} ]] || throw_error "${_local_dir} doesn't exist. edit the common file"
   }
 }
@@ -128,20 +128,20 @@ find_new_version() {
 # List the current packages files
 list_packaged_tarballs() {
   case ${release_name} in
-    applications) repository_name="KDE:Applications" ;;
-    frameworks)   repository_name="KDE:Frameworks5"  ;;
-    plasma)       repository_name="KDE:Frameworks5"  ;;
+    applications) repository_name=${KA_CHECKOUT_DIR} ;;
+    frameworks)   repository_name=${KF_CHECKOUT_DIR} ;;
+    plasma)       repository_name=${KF_CHECKOUT_DIR} ;;
   esac
-  packaged_tarballs=(${OBS_DIR}/${repository_name}/*/*.${EXT})
+  packaged_tarballs=(${repository_name}/*/*.${EXT})
 
   # Remove the packages from the ignore list
   foreach pkg (${ignore_list}) {
-    packaged_tarballs[(r)${OBS_DIR}/${repository_name}/${pkg}/*]=()
+    packaged_tarballs[(r)${repository_name}/${pkg}/*]=()
   }
 
   # For frameworks and plasma releases, the spec files from the unstable repository is used
   if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
-    [[ -d "${OBS_DIR}/KDE:Unstable:Frameworks" ]] || throw_error "KDE:Unstable:Frameworks is also needed before updating the frameworks or plasma packages"
+    [[ -d "${KUF_CHECKOUT_DIR}" ]] || throw_error "a up-to-date KDE:Unstable:Frameworks checkout is required before updating the frameworks or plasma packages"
   fi
 }
 
@@ -369,7 +369,7 @@ update_spec_file() {
     
     # For frameworks release, first copy the .spec file from the KDE:Unstable:Frameworks package
     if [[ ${release_name} == "frameworks" ]]; then
-      write_command cp -f ${OBS_DIR}/KDE:Unstable:Frameworks/$(package_name ${packaged_tarballs[$i]})/*.spec .
+      write_command cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.spec .
     fi
     
     write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"
