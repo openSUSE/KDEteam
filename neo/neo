@@ -367,9 +367,10 @@ update_spec_file() {
     write_command pushd ${OBS_DIR}/${branched_checkout_dir}/$(package_name ${packaged_tarballs[$i]})
     write_command osc vc -F ${TARBALLS_DIR}/changelogs/$(application_name ${new_tarballs[$i]}).changes
     
-    # For frameworks release, first copy the .spec file from the KDE:Unstable:Frameworks package
-    if [[ ${release_name} == "frameworks" ]]; then
-      write_command cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.spec .
+    # For frameworks release, first copy the spec and patch files from the KDE:Unstable:Frameworks package
+    if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
+      write_command rm -f *.{patch,diff}
+      write_command cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} .
     fi
     
     write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"
