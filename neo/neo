@@ -135,16 +135,18 @@ find_new_version() {
 
 # List the current packages files
 list_packaged_tarballs() {
-  case ${release_name} in
-    applications) repository_name=${KA_CHECKOUT_DIR} ;;
-    frameworks)   repository_name=${KF_CHECKOUT_DIR} ;;
-    plasma)       repository_name=${KF_CHECKOUT_DIR} ;;
-  esac
-  packaged_tarballs=(${repository_name}/*/*.${EXT})
+  if [[ ${release_name} == "applications" ]]; then
+    repository_name="KDE:Applications"
+    repository_checkout_dir="${KA_CHECKOUT_DIR}"
+  else
+    repository_name="KDE:Frameworks5"
+    repository_checkout_dir="${KF_CHECKOUT_DIR}"
+  fi
+  packaged_tarballs=(${repository_checkout_dir}/*/*.${EXT})
 
   # Remove the packages from the ignore list
   foreach pkg (${ignore_list}) {
-    packaged_tarballs[(r)${repository_name}/${pkg}/*]=()
+    packaged_tarballs[(r)${repository_checkout_dir}/${pkg}/*]=()
   }
 
   # For frameworks and plasma releases, the spec files from the unstable repository is used
