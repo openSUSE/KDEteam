@@ -352,7 +352,7 @@ fetch_changes() {
 
     if [[ ${changelog_entries} == "" ]]; then
       if [[ -v only_list_bugs ]]; then
-        changelog_body="- Too many changes to list here. No bugs fixed since ${old_version}"
+        changelog_body="- Too many changes to list here."
       else
         changelog_body="- No code change since ${old_version}"
       fi
