@@ -268,6 +268,13 @@ fetch_changes() {
   local -a changelog_body
   local -a reverted_commits
   local -aU changelog_entries
+  local -aU changelog_onlybug_entries
+  
+  # How many commits shall be mentioned in the changelog.
+  # After removing the revert and silent commits, if there are more than
+  # $maximum_commits entries remaining, only bug fixes will be mentioned.
+  # (except if there are also too many bugs fixed)
+  maximum_commits=10
 
   foreach git_repo ($(application_name ${new_tarballs})) {
 
@@ -302,8 +309,6 @@ fetch_changes() {
     old_tag="v${old_version}"
 
     commits=($(git log --pretty=format:%H --no-merges ${old_tag}...${new_tag}))
-    # If there are more than 10 commits, only mention the bug fixes
-    [[ ${#commits[@]} -gt 10 ]] && only_list_bugs=true
 
     foreach commit (${commits}) {
       if [[ -n "${reverted_commits[(Ie)${commit}]}" ]]; then
@@ -337,34 +342,37 @@ fetch_changes() {
               obs_bug_entry+=")"
             fi
 
-            if [[ -v only_list_bugs ]]; then
-              [[ -v obs_bug_entry ]] && changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
-            else
-              changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
-            fi
+            changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+            # If there's a bug fixed with this commit, also add the changelog entry to a different array
+            [[ -v obs_bug_entry ]] && changelog_onlybug_entries+="\n  * ${commit_summary}${obs_bug_entry}"
 
+            # Reset
             unset obs_bug_entry
           fi
         fi
       fi
     }
 
-    if [[ ${changelog_entries} == "" ]]; then
-      if [[ -v only_list_bugs ]]; then
-        changelog_body="- Too many changes to list here."
-      else
-        changelog_body="- No code change since ${old_version}"
-      fi
+    if [[ ${#changelog_entries[@]} -eq 0 ]]; then
+      changelog_body="- No code change since ${old_version}"
     else
-      if [[ -v only_list_bugs ]]; then
-        changelog_body="- Too many changes since ${old_version}, only listing bugfixes:"
+      if [[ ${#changelog_entries[@]} -gt ${maximum_commits} ]]; then
+        changelog_body="- Too many changes to list here."
+
+        # Swap the array values and check again
+        changelog_entries=(${changelog_onlybug_entries})
+        if [[ ${#changelog_entries[@]} -le ${maximum_commits} ]]; then
+          changelog_body="- Too many changes since ${old_version}, only listing bugfixes:"
+        fi
       else
         changelog_body="- Changes since ${old_version}:"
       fi
-      foreach changelog_entry (${changelog_entries}) {
-        changelog_body="${changelog_body}${changelog_entry}"
-      }
     fi
+
+    foreach changelog_entry (${changelog_entries}) {
+      changelog_body="${changelog_body}${changelog_entry}"
+    }
+
     # The changelog is complete, save it
     echo ${changelog_intro}${changelog_body} > ${TARBALLS_DIR}/changelogs/${git_repo}.changes
     popd
@@ -377,9 +385,9 @@ fetch_changes() {
     unset commit_summary
     unset commit_bugs
     unset obs_bug_entry
-    unset only_list_bugs
     changelog_body=()
     changelog_entries=()
+    changelog_onlybug_entries=()
     reverted_commits=()    
   }
   popd
