@@ -26,7 +26,6 @@
 #
 # The script shall handle applications, frameworks and plasma releases
 #
-# TODO Find a name for this script
 #
 # Usage:
 # neo <release_name>
@@ -86,6 +85,7 @@ package_path() {
 write_command() {
   echo $* >> ${UPDATE_SCRIPT_DIR}/update_packages
 }
+
 # Prepare the file
 echo "#!/bin/zsh" > ${UPDATE_SCRIPT_DIR}/update_packages
 write_command "#"
@@ -225,7 +225,6 @@ replace_files() {
 
 # Create the temp folder that will host the changelog files and start generating
 # the changelog entry.
-
 prepare_changelog() {
   mkdir -p ${TARBALLS_DIR}/changelogs
   # xx.yy.0 -> feature
