@@ -38,6 +38,7 @@ kidletime
 kimageformats
 kinit
 kio
+kirigami2
 kitemmodels
 kitemviews
 kjobwidgets
@@ -67,6 +68,7 @@ kxmlrpcclient5
 libKF5ModemManagerQt
 libKF5NetworkManagerQt
 oxygen5-icon-theme
+qqc2-desktop-style
 plasma-framework
 purpose
 solid
