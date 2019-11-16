@@ -294,7 +294,7 @@ fetch_changes() {
     # If the tag wasn't pushed yet, use the branch to get changelog entries
     if [[ ! -n ${tags[(r)v${new_version}]} ]]; then
       if [[ "${release_name}" == applications ]]; then
-        new_tag="origin/Applications/${new_major_version}.${new_minor_version}"
+        new_tag="origin/release/${new_major_version}.${new_minor_version}"
       elif [[ "${release_name}" == plasma ]]; then
         new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
       else
