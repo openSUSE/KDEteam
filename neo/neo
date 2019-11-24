@@ -246,9 +246,9 @@ prepare_changelog() {
       # The applications URL is different for beta and RC
       # 19.07.xx == 19.08-{beta,rc}
       if [[ $new_patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.0$((${new_minor_version} + 1))-beta.php
+        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.$((${new_minor_version} + 1))-beta.php
       else
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.0$((${new_minor_version} + 1))-rc.php
+        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.$((${new_minor_version} + 1))-rc.php
       fi
     fi
   fi
@@ -294,6 +294,7 @@ fetch_changes() {
     # If the tag wasn't pushed yet, use the branch to get changelog entries
     if [[ ! -n ${tags[(r)v${new_version}]} ]]; then
       if [[ "${release_name}" == applications ]]; then
+        # Changed for 19.12.
         new_tag="origin/release/${new_major_version}.${new_minor_version}"
       elif [[ "${release_name}" == plasma ]]; then
         new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
