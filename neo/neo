@@ -295,9 +295,17 @@ fetch_changes() {
     if [[ ! -n ${tags[(r)v${new_version}]} ]]; then
       if [[ "${release_name}" == applications ]]; then
         # Changed for 19.12.
-        new_tag="origin/release/${new_major_version}.${new_minor_version}"
+        if [[ ${new_patch_version} -lt 80 ]]; then
+          new_tag="origin/release/${new_major_version}.${new_minor_version}"
+        else
+          new_tag="origin/release/${new_major_version}.$((${new_minor_version} + 1))"
+        fi
       elif [[ "${release_name}" == plasma ]]; then
-        new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
+        if [[ ${new_patch_version} -lt 80 ]]; then
+          new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
+        else
+          new_tag="origin/Plasma/${new_major_version}.$((${new_minor_version} + 1))"
+        fi
       else
         # Frameworks pre-release tags are called v${new_version}-rcX
         # TODO handle rc2, rc3...
