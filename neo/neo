@@ -370,7 +370,7 @@ fetch_changes() {
 
         # Swap the array values and check again
         changelog_entries=(${changelog_onlybug_entries})
-        if [[ ${#changelog_entries[@]} -le ${maximum_commits} ]]; then
+        if [[ ${#changelog_entries[@]} -le ${maximum_commits} ]] && [[ ${#changelog_entries[@]} -gt 0 ]]; then
           changelog_body="- Too many changes since ${old_version}, only listing bugfixes:"
         fi
       else
