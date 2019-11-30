@@ -241,14 +241,14 @@ prepare_changelog() {
     changelog_url=https://www.kde.org/announcements/plasma-${new_version}.php
   else
     if [[ ${new_patch_version} -lt 80 ]]; then
-      changelog_url=${ANNOUNCE_URL}/announce-applications-${new_version}.php
+      changelog_url=${ANNOUNCE_URL}/releases/${new_version}
     else
       # The applications URL is different for beta and RC
       # 19.07.xx == 19.08-{beta,rc}
       if [[ $new_patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.$((${new_minor_version} + 1))-beta.php
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.$((${new_minor_version} + 1))-beta
       else
-        changelog_url=${ANNOUNCE_URL}/announce-applications-${new_major_version}.$((${new_minor_version} + 1))-rc.php
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.$((${new_minor_version} + 1))-rc
       fi
     fi
   fi
