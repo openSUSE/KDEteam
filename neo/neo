@@ -328,8 +328,8 @@ fetch_changes() {
         if [[ ${commit_log} =~ "This reverts commit" ]]; then
           reverted_commits+=${${commit_log##*This reverts commit }%%.*}
         else
-          # Ignore commits if the commit message contains GIT_SILENT or SVN_SILENT
-          if [[ ! ${commit_log} =~ _SILENT ]]; then
+          # Ignore commits if the commit message contains GIT_SILENT, SVN_SILENT or NO_CHANGELOG
+          if [[ ! ${commit_log} =~ _SILENT ]] && [[ ! ${commit_log} =~ NO_CHANGELOG ]]; then
             commit_summary="$(git show -s --pretty=format:%s ${commit})"
             # Remove trailing whitespaces
             regexp-replace commit_summary '\s*$' ''
