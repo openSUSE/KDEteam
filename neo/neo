@@ -350,10 +350,10 @@ fetch_changes() {
               done
               obs_bug_entry+=")"
             fi
-
-            changelog_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+            # Special characters are escaped
+            changelog_entries+="\n  * ${commit_summary:gs/\\/\\\\}${obs_bug_entry}"
             # If there's a bug fixed with this commit, also add the changelog entry to a different array
-            [[ -v obs_bug_entry ]] && changelog_onlybug_entries+="\n  * ${commit_summary}${obs_bug_entry}"
+            [[ -v obs_bug_entry ]] && changelog_onlybug_entries+="\n  * ${commit_summary:gs/\\/\\\\}${obs_bug_entry}"
 
             # Reset
             unset obs_bug_entry
