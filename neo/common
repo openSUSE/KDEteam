@@ -37,4 +37,4 @@ RELEASE_NAME=(applications frameworks plasma)
 EXT="tar.xz"
 
 # Where releases announces are published
-ANNOUNCE_URL="https://www.kde.org/announcements"
+ANNOUNCE_URL="https://kde.org/announcements"
