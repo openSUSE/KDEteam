@@ -153,6 +153,11 @@ list_packaged_tarballs() {
   if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
     [[ -d "${KUF_CHECKOUT_DIR}" ]] || throw_error "a up-to-date KDE:Unstable:Frameworks checkout is required before updating the frameworks or plasma packages"
   fi
+
+  # For applications beta release, the spec file from the unstable repository is used
+  if [[ ${release_name} == "applications" ]] && [[ ${new_patch_version} -eq 80 ]]; then
+    [[ -d "${KUA_CHECKOUT_DIR}" ]] || throw_error "a up-to-date KDE:Unstable:Applications checkout is required for beta releases"
+  fi
 }
 
 # Based on the tarball name, find which packages shall be updated
@@ -246,9 +251,9 @@ prepare_changelog() {
       # The applications URL is different for beta and RC
       # 19.07.xx == 19.08-{beta,rc}
       if [[ $new_patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.$((${new_minor_version} + 1))-beta
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.0$((${new_minor_version} + 1))-beta
       else
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.$((${new_minor_version} + 1))-rc
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.0$((${new_minor_version} + 1))-rc
       fi
     fi
   fi
@@ -413,6 +418,11 @@ update_spec_file() {
     if [[ ${release_name} == "frameworks" ]] || [[ ${release_name} == "plasma" ]]; then
       write_command "rm -f *.{patch,diff}"
       write_command "cp -f ${KUF_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} ."
+    fi
+    
+    if [[ ${release_name} == "applications" ]] && [[ ${new_patch_version} -eq 80 ]]; then
+      write_command "rm -f *.{patch,diff}"
+      write_command "cp -f ${KUA_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} ."
     fi
     
     write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"

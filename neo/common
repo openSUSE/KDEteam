@@ -19,6 +19,9 @@ GIT_DIR="/data/kde/src"
 # KDE:Applications
 KA_CHECKOUT_DIR="${OBS_DIR}/KDE:Applications"
 
+# KDE:Unstable:Applications (needed for release service betas)
+KUA_CHECKOUT_DIR="${OBS_DIR}/KDE:Unstable:Applications"
+
 # KDE:Frameworks
 KF_CHECKOUT_DIR="${OBS_DIR}/KDE:Frameworks5"
 
