@@ -437,6 +437,10 @@ update_spec_file() {
     if [[ "${old_download_url_dir}" != "${new_download_url_dir}" ]]; then
       write_command "perl -pi -e 's#download.kde.org/${old_download_url_dir}#download.kde.org/${new_download_url_dir}#g' $(package_name ${packaged_tarballs[$i]}).spec"
     fi
+    # TODO Only needed for the 20.04 beta
+    if [[  ${release_name} == "applications" ]] && [[ $new_patch_version -eq 80 ]]; then
+      write_command "perl -pi -e 's#unstable/applications#unstable/release-service#g' $(package_name ${packaged_tarballs[$i]}).spec"
+    fi
   done
 }
 
