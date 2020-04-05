@@ -295,16 +295,20 @@ fetch_changes() {
     # Fetch the existing tags
     tags=($(git tag))
 
+    # Add the leading zero if necessary
+    typeset -Z 2 new_tag_minor_version
+
     ## Special cases
     # If the tag wasn't pushed yet, use the branch to get changelog entries
     if [[ ! -n ${tags[(r)v${new_version}]} ]]; then
       if [[ "${release_name}" == applications ]]; then
         # Changed for 19.12.
         if [[ ${new_patch_version} -lt 80 ]]; then
-          new_tag="origin/release/${new_major_version}.${new_minor_version}"
+          new_tag_minor_version=${new_minor_version}
         else
-          new_tag="origin/release/${new_major_version}.$((${new_minor_version} + 1))"
+          new_tag_minor_version=$((${new_minor_version} + 1))
         fi
+        new_tag="origin/release/${new_major_version}.${new_tag_minor_version}"
       elif [[ "${release_name}" == plasma ]]; then
         if [[ ${new_patch_version} -lt 80 ]]; then
           new_tag="origin/Plasma/${new_major_version}.${new_minor_version}"
