@@ -47,7 +47,7 @@ autoload -U regexp-replace
 
 ##### Helper functions #####
 
-# Print an error and exits if anything goes wrong
+# Print an error and exit if anything goes wrong
 throw_error() {
   print "ERROR: ${*}" && exit
 }
@@ -325,6 +325,12 @@ fetch_changes() {
     fi
 
     old_tag="v${old_version}"
+
+    # If the previous tag doesn't exist in the repo, skip the package
+    if (( ! ${tags[(I)${old_tag}]} )); then
+      debug "Tag ${old_tag} is missing in ${git_repo}. Skipping"
+      continue
+    fi
 
     commits=($(git log --pretty=format:%H --no-merges ${old_tag}...${new_tag}))
 
