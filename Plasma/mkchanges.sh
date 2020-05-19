@@ -53,12 +53,27 @@ echo "- Update to $version_to"
 echo "  * New $type release"
 echo "  * For more details please see:"
 echo "  * https://www.kde.org/announcements/plasma-$4.php"
-commits=$(git log --pretty=format:%H --no-merges $commit_from...$commit_to)
+commits=($(git log --pretty=format:%H --no-merges $commit_from...$commit_to))
 
-if [ "$(echo -- "$commits" | wc -l)" -gt 100 ]; then
+if [ "${#commits}" -gt 100 ]; then
     echo "- Too many changes to list here"
 else
-    for i in $commits; do
+    reverts=()
+    for revert in ${commits[@]}; do
+        descr="$(git show -s --pretty=%B "${revert}")"
+        if [[ $descr =~ This\ reverts\ commit\ ([0-9a-f]*)\. ]]; then
+            reverted="${BASH_REMATCH[1]}"
+            reverts+=("${reverted}")
+            # Reverted commit in the list?
+            if [[ " ${commits[@]} " =~ " ${reverted} " ]]; then
+                # Ignore the revert and the reverted commit
+                commits=("${commits[@]/$revert}")
+                commits=("${commits[@]/$reverted}")
+            fi
+        fi
+    done
+
+    for i in ${commits[@]}; do
         changes="${changes}$(entryForCommit "$i")"
     done
 
