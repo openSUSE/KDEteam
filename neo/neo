@@ -248,15 +248,19 @@ prepare_changelog() {
   elif [[ ${release_name} == plasma ]]; then
     changelog_url=${ANNOUNCE_URL}/plasma-${new_version}
   else
+    typeset -Z 2 _release_url_minor_version
+
     if [[ ${new_patch_version} -lt 80 ]]; then
-      changelog_url=${ANNOUNCE_URL}/releases/20${new_major_version}-${new_minor_version}-apps-update
+      _release_url_minor_version=$((${new_minor_version} + ${new_patch_version}))
+      changelog_url=${ANNOUNCE_URL}/releases/20${new_major_version}-${_release_url_minor_version}-apps-update
     else
       # The applications URL is different for beta and RC
       # 19.07.xx == 19.08-{beta,rc}
+      _release_url_minor_version=$((${new_minor_version} + 1))
       if [[ $new_patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.0$((${new_minor_version} + 1))-beta
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.${_release_url_minor_version}-beta
       else
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.0$((${new_minor_version} + 1))-rc
+        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.${_release_url_minor_version}-rc
       fi
     fi
   fi
