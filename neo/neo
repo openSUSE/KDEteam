@@ -93,9 +93,6 @@ write_command "setopt +o nomatch"
 
 ############################
 
-# Check if rpmspec is available
-_rpmspec="$(which rpmspec)" || throw_error "rpmspec  (provided by rpm-build) was not found. Aborting."
-
 # Local variables
 local -a packages_to_update
 local -a new_packages
@@ -442,8 +439,7 @@ update_spec_file() {
       write_command "cp -f ${KUA_CHECKOUT_DIR}/$(package_name ${packaged_tarballs[$i]})/*.{spec,patch,diff} ."
     fi
     
-    write_command "perl -pi -e "s#\$\(rpmspec -q --srpm --qf \"%{version}\" $(package_name ${packaged_tarballs[$i]}).spec\)#${new_version}#g" $(package_name ${packaged_tarballs[$i]}).spec"
-
+    write_command "perl -pi -e 's#${old_version}#${new_version}#g' $(package_name ${packaged_tarballs[$i]}).spec"
     if [[ ${release_name} == "frameworks" ]]; then
       write_command "perl -pi -e 's#_tar_path ${old_major_version}.${old_minor_version}#_tar_path ${new_major_version}.${new_minor_version}#' $(package_name ${packaged_tarballs[$i]}).spec"
     fi
