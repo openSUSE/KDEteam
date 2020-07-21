@@ -266,6 +266,19 @@ prepare_changelog() {
 fetch_changes() {
   pushd ${GIT_DIR}
 
+# anongit.kde.org is gone. Using git-kclone is the only reliable
+# way to get the repository URL.
+if [[ -d repo-metadata ]]; then
+  pushd repo-metadata
+  # Update repositories location
+  git pull
+  popd
+else
+  git clone https://invent.kde.org/sysadmin/repo-metadata
+fi
+
+git_command="${GIT_DIR}/repo-metadata/git-helpers/git-kclone"
+
   # Init
   local -a changelog_body
   local -a reverted_commits
@@ -280,7 +293,7 @@ fetch_changes() {
 
   foreach git_repo ($(application_name ${new_tarballs})) {
 
-    [[ -d ${git_repo} ]] || git clone git://anongit.kde.org/${git_repo}
+    [[ -d ${git_repo} ]] || ${git_command} ${git_repo}
     
     pushd ${git_repo}
 
