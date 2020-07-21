@@ -250,22 +250,15 @@ prepare_changelog() {
     if [[ ${new_patch_version} -lt 80 ]]; then
       _release_url_minor_version=$((${new_minor_version} + ${new_patch_version}))
       changelog_url=${ANNOUNCE_URL}/releases/20${new_major_version}-${_release_url_minor_version}-apps-update
-    else
-      # The applications URL is different for beta and RC
-      # 19.07.xx == 19.08-{beta,rc}
-      _release_url_minor_version=$((${new_minor_version} + 1))
-      if [[ $new_patch_version -lt 90 ]]; then
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.${_release_url_minor_version}-beta
-      else
-        changelog_url=${ANNOUNCE_URL}/releases/${new_major_version}.${_release_url_minor_version}-rc
-      fi
     fi
   fi
 
   changelog_intro="- Update to ${new_version}
-  * New ${release_type} release
-  * For more details please see:
+  * New ${release_type} release\n"
+  if [ -v changelog_url ]; then
+    changelog_intro+="  * For more details please see:
   * ${changelog_url}\n"
+  fi
 }
 
 # Update the GIT repository (or checkout the missing ones), fetch changes since
