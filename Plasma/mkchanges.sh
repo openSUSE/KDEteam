@@ -52,7 +52,7 @@ echo -e " - Fabian Vogt <fabian@ritter-vogt.de>\n"
 echo "- Update to $version_to"
 echo "  * New $type release"
 echo "  * For more details please see:"
-echo "  * https://www.kde.org/announcements/plasma-$4.php"
+echo "  * https://kde.org/announcements/plasma-$4"
 commits=($(git log --pretty=format:%H --no-merges $commit_from...$commit_to))
 
 if [ "${#commits}" -gt 100 ]; then
