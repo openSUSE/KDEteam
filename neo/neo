@@ -339,6 +339,7 @@ git_command="${GIT_DIR}/repo-metadata/git-helpers/git-kclone"
     # If the previous tag doesn't exist in the repo, skip the package
     if (( ! ${tags[(I)${old_tag}]} )); then
       debug "Tag ${old_tag} is missing in ${git_repo}. Skipping"
+      popd
       continue
     fi
 
