@@ -247,9 +247,18 @@ prepare_changelog() {
   else
     typeset -Z 2 _release_url_minor_version
 
+    _release_url_major_version=${new_major_version}
+
     if [[ ${new_patch_version} -lt 80 ]]; then
       _release_url_minor_version=$((${new_minor_version} + ${new_patch_version}))
-      changelog_url=${ANNOUNCE_URL}/releases/20${new_major_version}-${_release_url_minor_version}-apps-update
+
+      # Handle first releases of the year. The URL for eg. 20.12.1 ends with 'releases/2021-01-apps-update'
+      if [[ ${_release_url_minor_version} -gt 12 ]]; then
+        _release_url_major_version=$((${new_major_version} + 1))
+        _release_url_minor_version=$((${_release_url_minor_version} - 12))
+      fi
+
+      changelog_url=${ANNOUNCE_URL}/releases/20${_release_url_major_version}-${_release_url_minor_version}-apps-update
     fi
   fi
 
