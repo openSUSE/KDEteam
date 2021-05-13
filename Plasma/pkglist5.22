@@ -15,11 +15,12 @@ kmenuedit5
 kscreen5
 kscreenlocker
 ksshaskpass5
-ksysguard5
+ksystemstats5
 kwayland-integration
 kwayland-server
 kwin5
 kwrited5
+layer-shell-qt
 libkdecoration2
 libkscreen2
 libksysguard5
@@ -46,3 +47,7 @@ plymouth-kcm
 plasma-browser-integration
 plasma5-thunderbolt
 plasma5-nano
+plasma5-systemmonitor
+plasma5-phone-components
+plasma5-firewall
+qqc2-breeze-style
