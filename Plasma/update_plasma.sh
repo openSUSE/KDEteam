@@ -28,9 +28,13 @@ fi
 for i in $pkgs; do
     echo "Updating $i:"
     cd $i
-    spec_version="${version_from}"
-    [[ "$i" == "plasma5-openSUSE" ]] || spec_version="$(rpmspec -q --srpm --qf %{version} $i.spec)"
-    sed -i "s/${spec_version//\./\\.}/$version_to/g" *.spec
+    if [[ "$i" == "plasma5-openSUSE" ]]; then
+        spec_version="${version_from}"
+        sed -i "s/${version_from}/${version_to}/g" *.spec
+    else
+        spec_version="$(rpmspec -q --srpm --qf %{version} $i.spec)"
+        sed -i "s/^Version:        ${spec_version//\./\\.}/Version:        $version_to/g" *.spec
+    fi
     echo -e "\tSpecfile updated"
     reponame=$(rpmspec -q --srpm --qf '[%{SOURCE}\n]' $i.spec | grep '.tar.xz$' | sed "s/-5.*//")
     if [ ! -d "$repo_location/$reponame" ]; then
@@ -54,6 +58,7 @@ for i in $pkgs; do
 
     # Adjust Source URL
     sed -i 's#Source:.*$#Source:         '${tar_url}${reponame}'-%{version}.tar.xz#' *.spec
+    sed -i 's#Source0:.*$#Source0:        '${tar_url}${reponame}'-%{version}.tar.xz#' *.spec
     [ $needs_signature = 1 ] && sed -i 's#Source1:.*$#Source1:        '${tar_url}${reponame}'-%{version}.tar.xz.sig#' *.spec
 
     tar_path="${tar_location}/${reponame}-${version_to}.tar.xz"
