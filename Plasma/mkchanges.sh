@@ -21,13 +21,17 @@ type=$5
 
 function entryForCommit {
     commit="$1"
-    subject="$(git show -s --pretty=format:%s "$commit")"
+    description="$(git show -s "$commit")"
 
     # Ignore GIT_SILENT/SVN_SILENT
-    if [[ "${subject/_SILENT}" != "${subject}" ]]; then
+    if [[ "${description/_SILENT}" != "${description}" ]]; then
+        return
+    fi
+    if [[ "${description/NO_CHANGELOG}" != "${description}" ]]; then
         return
     fi
 
+    subject="$(git show -s --pretty=format:%s "$commit")"
     echo -n "  * ${subject}"
 
     # Get bugrefs
