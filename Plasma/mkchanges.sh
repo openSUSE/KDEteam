@@ -46,8 +46,6 @@ function entryForCommit {
         set +f
         echo -n ")"
     fi
-
-    echo "\n"
 }
 
 echo "-------------------------------------------------------------------"
@@ -78,7 +76,8 @@ else
     done
 
     for i in ${commits[@]}; do
-        changes="${changes}$(entryForCommit "$i")"
+        entry="$(entryForCommit "$i")"
+        [ -n "$entry" ] && changes="${changes}${entry}"$'\n'
     done
 
     if [ "$(echo -e -- "$changes" | wc -l)" -gt 30 ]; then
@@ -87,7 +86,7 @@ else
         echo "- No code changes since $version_from"
     else
         echo "- Changes since $version_from:"
-        echo -ne "${changes}" | uniq
+        echo -n "${changes}" | uniq
     fi
 fi
 echo ""
