@@ -5,11 +5,11 @@
 set -euo pipefail
 
 # Version number
-version_from=""
-version_to="5.92.0"
+version_from="6.3.4"
+version_to="6.3.5"
 # Git refs
-commit_from=""
-commit_to="v5.92.0"
+commit_from="v${version_from}"
+commit_to="v${version_to}"
 # Type of update, either "bugfix" or "feature"
 type="bugfix"
 # Location of plasma repo checkouts (need to be fresh)
@@ -17,7 +17,7 @@ repo_location="/home/fabian/kderepos"
 # Location of downloaded tars. Will be used if available
 tar_location="/home/fabian/plasmatars"
 # If empty, URL will be stripped from source
-tar_url="https://download.kde.org/unstable/plasma/%{version}/"
+tar_url="https://download.kde.org/stable/plasma/%{version}/"
 
 script_dir=$(realpath "$(dirname "$0")")
 
@@ -29,7 +29,7 @@ fi
 for i in $pkgs; do
     echo "Updating $i:"
     cd $i
-    if grep -q "\- Update to ${version_to}" *.changes; then
+    if grep -q "\- Update to ${version_to}:" *.changes; then
         echo -e "\tAlready done"
         cd ..
         continue
@@ -55,7 +55,10 @@ for i in $pkgs; do
         echo -e "\t_service deleted"
     fi
     echo -e "\tSpecfile updated"
-    reponame=$(rpmspec -q --srpm --qf '[%{SOURCE}\n]' $i.spec | grep '.tar.xz$' | sed "s/-[56].*//")
+    reponame=$(rpmspec -q --srpm --qf '[%{SOURCE}\n]' $i.spec | grep '.tar.xz$' | sed -E 's/-[^-]+$//')
+    if [ -e "${script_dir}/plasma-${version_to}-release-data" ]; then
+        commit_to="$(awk -F\; "\$1 == \"${reponame}\" { print \$3 }" "${script_dir}/plasma-${version_to}-release-data")"
+    fi
 
     rm -f *.tar.xz *.tar.xz.sig
 
@@ -71,7 +74,7 @@ for i in $pkgs; do
         echo -e "\tArchive copied"
     else
         echo -e "\tTrying to download"
-        osc service runall download_files >/dev/null 2>&1 || echo "\t\tFailed?"
+        osc service runall download_files >/dev/null 2>&1 || echo -e "\t\tFailed?"
         if [ -f *.tar.xz ]; then
             echo -e "\t\tDone"
         else
@@ -83,19 +86,9 @@ for i in $pkgs; do
         cp "${script_dir}/plasma.keyring" .
         echo -e "\tCopied keyring"
     fi
-    
-    if [ "${version_to}" = "5.92.0" ]; then
-        {
-        echo "-------------------------------------------------------------------"
-        LANG=C TZ=UTC date | tr -d '\n'
-        echo -e " - Fabian Vogt <fabian@ritter-vogt.de>\n"
-        echo "- Update to 5.92.0 (6.0 RC 1)"
-        echo "  * For more details please see:"
-        echo "    https://kde.org/announcements/megarelease/6/rc1/"
-        echo ""
-        } > /tmp/change
-    elif [ -n "${commit_from}" ] && [ -d "$repo_location/$reponame" ]; then
-        (cd "${repo_location}/${reponame}"; "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type") > /tmp/change
+
+    if [ -n "${commit_from}" ] && [ -d "$repo_location/$reponame" ]; then
+        (cd "${repo_location}/${reponame}"; git fetch origin --tags; "${script_dir}/mkchanges.sh" "$commit_from" "$commit_to" "$version_from" "$version_to" "$type") > /tmp/change
     else
         echo -e "\tNo checkout for $reponame"
         "${script_dir}/mkchanges.sh" "$version_to" > /tmp/change

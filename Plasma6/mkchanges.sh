@@ -51,28 +51,23 @@ function entryForCommit {
 echo "-------------------------------------------------------------------"
 LANG=C TZ=UTC date | tr -d '\n'
 echo -e " - Fabian Vogt <fabian@ritter-vogt.de>\n"
-echo "- Update to $version_to"
+echo "- Update to $version_to:"
 echo "  * New $type release"
-echo "  * For more details please see:"
-echo "  * https://kde.org/announcements/plasma/6/$4"
+echo "  * For more details see https://kde.org/announcements/plasma/6/$4"
 commits=($(git log --pretty=format:%H --no-merges $commit_from..$commit_to))
 
 if [ "${#commits}" -gt 100 ]; then
     echo "- Too many changes to list here"
 else
-    reverts=()
     for revert in ${commits[@]}; do
-        descr="$(git show -s --pretty=%B "${revert}")"
-        if [[ $descr =~ This\ reverts\ commit\ ([0-9a-f]*) ]]; then
-            reverted="${BASH_REMATCH[1]}"
-            reverts+=("${reverted}")
+        for reverted in $(git show -s --pretty=%B "${revert}" | awk 'match($0, /This reverts commit ([0-9a-f]{40})/, m) {print m[1]}'); do
             # Reverted commit in the list?
             if [[ " ${commits[@]} " =~ " ${reverted} " ]]; then
                 # Ignore the revert and the reverted commit
                 commits=("${commits[@]/$revert}")
                 commits=("${commits[@]/$reverted}")
             fi
-        fi
+        done
     done
 
     for i in ${commits[@]}; do
